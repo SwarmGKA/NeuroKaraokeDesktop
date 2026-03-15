@@ -11,6 +11,7 @@ import { I18nProvider, useI18n, Language } from "./i18n";
 import { TitleBar } from "./components/TitleBar";
 import { Sidebar, Page } from "./components/Sidebar";
 import { UserPanel } from "./components/UserPanel";
+import { UserCardDialog } from "./components/UserCardDialog";
 import { PageTransition } from "./components/PageTransition";
 import {
   Home,
@@ -50,6 +51,7 @@ function AppContent() {
   const [accentTheme, setAccentTheme] = useState<AccentTheme>("neuro");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [store, setStore] = useState<Store | null>(null);
+  const [userCardOpen, setUserCardOpen] = useState(false);
   const { language, setLanguage } = useI18n();
   const sidebarRef = useRef<HTMLDivElement>(null);
 
@@ -65,14 +67,16 @@ function AppContent() {
 
         setStore(storeInstance);
 
-        const [savedBaseTheme, savedAccentTheme] = await Promise.all([
+        const [savedBaseTheme, savedAccentTheme, savedSidebarCollapsed] = await Promise.all([
           storeInstance.get<BaseTheme>("base-theme"),
           storeInstance.get<AccentTheme>("accent-theme"),
+          storeInstance.get<boolean>("sidebar-collapsed"),
         ]);
 
         if (mounted) {
           if (savedBaseTheme) setBaseTheme(savedBaseTheme);
           if (savedAccentTheme) setAccentTheme(savedAccentTheme);
+          if (savedSidebarCollapsed !== undefined) setSidebarCollapsed(savedSidebarCollapsed);
         }
       } catch (error) {
         console.error("Failed to load settings:", error);
@@ -106,6 +110,15 @@ function AppContent() {
     await setLanguage(lang);
   };
 
+  const handleSidebarCollapse = async () => {
+    const newState = !sidebarCollapsed;
+    setSidebarCollapsed(newState);
+    if (store) {
+      await store.set("sidebar-collapsed", newState);
+      await store.save();
+    }
+  };
+
   const handlePageChange = (page: Page) => {
     setCurrentPage(page);
     // 滚动侧边栏使选中项可见
@@ -116,6 +129,9 @@ function AppContent() {
       }
     }, 50);
   };
+
+  const handleOpenUserCard = () => setUserCardOpen(true);
+  const handleCloseUserCard = () => setUserCardOpen(false);
 
   const theme = createAppTheme(baseTheme, accentTheme);
 
@@ -192,11 +208,12 @@ function AppContent() {
                 onPageChange={handlePageChange}
                 accentColor={accentColor}
                 baseTheme={baseTheme}
+                sidebarCollapsed={sidebarCollapsed}
+                onToggleCollapse={handleSidebarCollapse}
               />
               <UserPanel
-                onSettingsClick={() => handlePageChange("settings")}
-                onLanguageChange={handleLanguageChange}
-                currentLanguage={language}
+                onSettingsClick={handleOpenUserCard}
+                onOpenUserCard={handleOpenUserCard}
                 accentColor={accentColor}
                 baseTheme={baseTheme}
               />
@@ -216,6 +233,16 @@ function AppContent() {
             </Box>
           </HStack>
         </Flex>
+        <UserCardDialog
+          isOpen={userCardOpen}
+          onClose={handleCloseUserCard}
+          baseTheme={baseTheme}
+          accentColor={accentColor}
+          onSettingsClick={() => {
+            handleCloseUserCard();
+            handlePageChange("settings");
+          }}
+        />
       </Box>
     </ChakraProvider>
   );

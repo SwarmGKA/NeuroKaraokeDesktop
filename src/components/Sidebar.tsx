@@ -21,8 +21,9 @@ import {
   FiMic,
   FiGrid,
   FiMessageSquare,
-  FiMusic,
   FiSettings,
+  FiChevronLeft,
+  FiChevronRight,
 } from "react-icons/fi";
 
 export type Page =
@@ -52,6 +53,8 @@ interface SidebarProps {
   onPageChange: (page: Page) => void;
   accentColor: string;
   baseTheme: "light" | "dark";
+  sidebarCollapsed: boolean;
+  onToggleCollapse: () => void;
 }
 
 interface MenuItem {
@@ -61,7 +64,7 @@ interface MenuItem {
 }
 
 export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(
-  ({ currentPage, onPageChange, accentColor, baseTheme }, ref) => {
+  ({ currentPage, onPageChange, accentColor, baseTheme, sidebarCollapsed, onToggleCollapse }, ref) => {
     const { t } = useI18n();
 
     const mainMenu: MenuItem[] = [
@@ -99,7 +102,7 @@ export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(
           key={item.id}
           data-page={item.id}
           variant="ghost"
-          justifyContent="flex-start"
+          justifyContent={sidebarCollapsed ? "center" : "flex-start"}
           leftIcon={<Icon size={18} />}
           bg={isActive ? `${accentColor}20` : undefined}
           color={isActive ? accentColor : baseTheme === "dark" ? "whiteAlpha.800" : "blackAlpha.800"}
@@ -110,15 +113,17 @@ export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(
           fontSize="sm"
           fontWeight="normal"
           py={2}
-          px={3}
+          px={sidebarCollapsed ? 2 : 3}
           h="auto"
           onClick={() => onPageChange(item.id)}
           transition="all 0.2s ease"
         >
-          <Text flex={1} textAlign="left">
-            {t(item.labelKey)}
-          </Text>
-          {item.id === "playlists" && (
+          {!sidebarCollapsed && (
+            <Text flex={1} textAlign="left">
+              {t(item.labelKey)}
+            </Text>
+          )}
+          {!sidebarCollapsed && item.id === "playlists" && (
             <IconButton
               aria-label="Add playlist"
               icon={<FiPlus size={14} />}
@@ -138,7 +143,7 @@ export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(
     return (
       <VStack
         ref={ref}
-        w="280px"
+        w={sidebarCollapsed ? "60px" : "280px"}
         h="full"
         bg={baseTheme === "dark" ? "#1a1a1a" : "#fafafa"}
         borderRightWidth="1px"
@@ -146,9 +151,10 @@ export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(
         align="stretch"
         gap={0}
         overflow="hidden"
+        transition="width 0.3s ease"
       >
         {/* Logo - Fixed */}
-        <HStack px={4} py={4} borderBottomWidth="1px" borderColor={baseTheme === "dark" ? "whiteAlpha.100" : "blackAlpha.100"}>
+        <HStack px={sidebarCollapsed ? 2 : 4} py={4} borderBottomWidth="1px" borderColor={baseTheme === "dark" ? "whiteAlpha.100" : "blackAlpha.100"} justifyContent={sidebarCollapsed ? "center" : "flex-start"}>
           <Box
             w={8}
             h={8}
@@ -158,11 +164,13 @@ export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(
             alignItems="center"
             justifyContent="center"
           >
-            <FiMusic size={20} color="#000" />
+            <FiMic size={20} color="#000" />
           </Box>
-          <Text fontSize="lg" fontWeight="bold" color={accentColor}>
-            {t("app.title")}
-          </Text>
+          {!sidebarCollapsed && (
+            <Text fontSize="lg" fontWeight="bold" color={accentColor}>
+              {t("app.title")}
+            </Text>
+          )}
         </HStack>
 
         {/* Scrollable Menu Area */}
@@ -179,48 +187,52 @@ export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(
             "scrollbar-width": "none",
           }}
         >
-          <VStack align="stretch" gap={1} w="full" px={2}>
+          <VStack align="stretch" gap={1} w="full" px={sidebarCollapsed ? 1 : 2}>
             {mainMenu.map(renderMenuItem)}
           </VStack>
 
-          <Box h="1px" bg={baseTheme === "dark" ? "whiteAlpha.100" : "blackAlpha.100"} my={2} mx={3} />
+          {!sidebarCollapsed && <Box h="1px" bg={baseTheme === "dark" ? "whiteAlpha.100" : "blackAlpha.100"} my={2} mx={3} />}
 
-          <VStack align="stretch" gap={1} w="full" px={2}>
-            <Text
-              fontSize="xs"
-              color={baseTheme === "dark" ? "whiteAlpha.400" : "blackAlpha.400"}
-              textTransform="uppercase"
-              letterSpacing="wider"
-              px={3}
-              py={2}
-            >
-              {t("sidebar.library")}
-            </Text>
+          <VStack align="stretch" gap={1} w="full" px={sidebarCollapsed ? 1 : 2}>
+            {!sidebarCollapsed && (
+              <Text
+                fontSize="xs"
+                color={baseTheme === "dark" ? "whiteAlpha.400" : "blackAlpha.400"}
+                textTransform="uppercase"
+                letterSpacing="wider"
+                px={3}
+                py={2}
+              >
+                {t("sidebar.library")}
+              </Text>
+            )}
             {libraryItems.map(renderMenuItem)}
           </VStack>
 
-          <Box h="1px" bg={baseTheme === "dark" ? "whiteAlpha.100" : "blackAlpha.100"} my={2} mx={3} />
+          {!sidebarCollapsed && <Box h="1px" bg={baseTheme === "dark" ? "whiteAlpha.100" : "blackAlpha.100"} my={2} mx={3} />}
 
-          <VStack align="stretch" gap={1} w="full" px={2}>
-            <Text
-              fontSize="xs"
-              color={baseTheme === "dark" ? "whiteAlpha.400" : "blackAlpha.400"}
-              textTransform="uppercase"
-              letterSpacing="wider"
-              px={3}
-              py={2}
-            >
-              {t("sidebar.others")}
-            </Text>
+          <VStack align="stretch" gap={1} w="full" px={sidebarCollapsed ? 1 : 2}>
+            {!sidebarCollapsed && (
+              <Text
+                fontSize="xs"
+                color={baseTheme === "dark" ? "whiteAlpha.400" : "blackAlpha.400"}
+                textTransform="uppercase"
+                letterSpacing="wider"
+                px={3}
+                py={2}
+              >
+                {t("sidebar.others")}
+              </Text>
+            )}
             {otherItems.map(renderMenuItem)}
           </VStack>
         </Box>
 
         {/* Settings Button */}
-        <Box px={3} py={2} borderTopWidth="1px" borderColor={baseTheme === "dark" ? "whiteAlpha.100" : "blackAlpha.100"}>
+        <Box px={sidebarCollapsed ? 1 : 3} py={2} borderTopWidth="1px" borderColor={baseTheme === "dark" ? "whiteAlpha.100" : "blackAlpha.100"}>
           <Button
             variant="ghost"
-            justifyContent="flex-start"
+            justifyContent={sidebarCollapsed ? "center" : "flex-start"}
             leftIcon={<FiSettings size={18} />}
             color={currentPage === "settings" ? accentColor : baseTheme === "dark" ? "whiteAlpha.800" : "blackAlpha.800"}
             bg={currentPage === "settings" ? `${accentColor}20` : undefined}
@@ -231,14 +243,37 @@ export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(
             fontSize="sm"
             w="full"
             py={2}
-            px={3}
+            px={sidebarCollapsed ? 2 : 3}
             h="auto"
             onClick={() => onPageChange("settings")}
             data-page="settings"
           >
-            <Text flex={1} textAlign="left">
-              {t("page.settings")}
-            </Text>
+            {!sidebarCollapsed && (
+              <Text flex={1} textAlign="left">
+                {t("page.settings")}
+              </Text>
+            )}
+          </Button>
+        </Box>
+
+        {/* Collapse Toggle Button */}
+        <Box px={sidebarCollapsed ? 1 : 3} py={2} borderTopWidth="1px" borderColor={baseTheme === "dark" ? "whiteAlpha.100" : "blackAlpha.100"}>
+          <Button
+            variant="ghost"
+            justifyContent="center"
+            leftIcon={sidebarCollapsed ? <FiChevronRight size={18} /> : <FiChevronLeft size={18} />}
+            color={baseTheme === "dark" ? "whiteAlpha.800" : "blackAlpha.800"}
+            _hover={{
+              bg: baseTheme === "dark" ? "whiteAlpha.100" : "blackAlpha.100",
+            }}
+            size="sm"
+            w="full"
+            py={2}
+            px={2}
+            h="auto"
+            onClick={onToggleCollapse}
+          >
+            {sidebarCollapsed ? <FiChevronRight size={18} /> : <FiChevronLeft size={18} />}
           </Button>
         </Box>
       </VStack>
