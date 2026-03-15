@@ -19,7 +19,7 @@ import {
   StatNumber,
 } from "@chakra-ui/react";
 import { FiSettings, FiEdit, FiLogOut } from "react-icons/fi";
-import { useI18n, Language } from "../i18n";
+import { useI18n } from "../i18n";
 
 interface UserCardDialogProps {
   isOpen: boolean;
@@ -33,8 +33,6 @@ export function UserCardDialog({
   isOpen,
   onClose,
   onSettingsClick,
-  onLanguageChange,
-  currentLanguage,
   accentColor,
   baseTheme,
 }: UserCardDialogProps) {

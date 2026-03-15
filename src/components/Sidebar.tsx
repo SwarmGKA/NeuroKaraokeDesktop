@@ -6,11 +6,9 @@ import {
   FiSearch,
   FiShuffle,
   FiCompass,
-  FiUsers,
   FiList,
   FiHelpCircle,
   FiHeadphones,
-  FiRadio,
   FiInfo,
   FiHeart,
   FiDownload,
@@ -21,7 +19,6 @@ import {
   FiMic,
   FiGrid,
   FiMessageSquare,
-  FiSettings,
   FiChevronLeft,
   FiChevronRight,
 } from "react-icons/fi";
@@ -152,6 +149,7 @@ export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(
         gap={0}
         overflow="hidden"
         transition="width 0.3s ease"
+        position="relative"
       >
         {/* Logo - Fixed */}
         <HStack px={sidebarCollapsed ? 2 : 4} py={4} borderBottomWidth="1px" borderColor={baseTheme === "dark" ? "whiteAlpha.100" : "blackAlpha.100"} justifyContent={sidebarCollapsed ? "center" : "flex-start"}>
@@ -228,46 +226,23 @@ export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(
           </VStack>
         </Box>
 
-        {/* Settings Button */}
-        <Box px={sidebarCollapsed ? 1 : 3} py={2} borderTopWidth="1px" borderColor={baseTheme === "dark" ? "whiteAlpha.100" : "blackAlpha.100"}>
-          <Button
-            variant="ghost"
-            justifyContent={sidebarCollapsed ? "center" : "flex-start"}
-            leftIcon={<FiSettings size={18} />}
-            color={currentPage === "settings" ? accentColor : baseTheme === "dark" ? "whiteAlpha.800" : "blackAlpha.800"}
-            bg={currentPage === "settings" ? `${accentColor}20` : undefined}
-            _hover={{
-              bg: currentPage === "settings" ? `${accentColor}30` : baseTheme === "dark" ? "whiteAlpha.100" : "blackAlpha.100",
-            }}
-            size="sm"
-            fontSize="sm"
-            w="full"
-            py={2}
-            px={sidebarCollapsed ? 2 : 3}
-            h="auto"
-            onClick={() => onPageChange("settings")}
-            data-page="settings"
-          >
-            {!sidebarCollapsed && (
-              <Text flex={1} textAlign="left">
-                {t("page.settings")}
-              </Text>
-            )}
-          </Button>
-        </Box>
-
         {/* Collapse Toggle Button */}
-        <Box px={sidebarCollapsed ? 1 : 3} py={2} borderTopWidth="1px" borderColor={baseTheme === "dark" ? "whiteAlpha.100" : "blackAlpha.100"}>
+        <Box
+          position="absolute"
+          right={0}
+          top="50%"
+          transform="translateY(-50%)"
+          zIndex={1}
+        >
           <Button
             variant="ghost"
             justifyContent="center"
-            leftIcon={sidebarCollapsed ? <FiChevronRight size={18} /> : <FiChevronLeft size={18} />}
             color={baseTheme === "dark" ? "whiteAlpha.800" : "blackAlpha.800"}
+            bg={baseTheme === "dark" ? "#1a1a1a" : "#fafafa"}
             _hover={{
               bg: baseTheme === "dark" ? "whiteAlpha.100" : "blackAlpha.100",
             }}
             size="sm"
-            w="full"
             py={2}
             px={2}
             h="auto"

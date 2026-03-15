@@ -212,7 +212,7 @@ function AppContent() {
                 onToggleCollapse={handleSidebarCollapse}
               />
               <UserPanel
-                onSettingsClick={handleOpenUserCard}
+                onSettingsClick={() => handlePageChange("settings")}
                 onOpenUserCard={handleOpenUserCard}
                 accentColor={accentColor}
                 baseTheme={baseTheme}
