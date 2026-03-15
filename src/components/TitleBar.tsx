@@ -69,11 +69,17 @@ export function TitleBar({ baseTheme }: TitleBarProps) {
     }
   };
 
+  const handleButtonMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
   return (
     <HStack
       w="full"
       h="40px"
-      px={4}
+      pl={4}
+      pr={0}
       justify="space-between"
       align="center"
       bg={bgColor}
@@ -96,6 +102,7 @@ export function TitleBar({ baseTheme }: TitleBarProps) {
           color={buttonColor}
           _hover={{ bg: buttonHoverBg }}
           onClick={handleMinimize}
+          onMouseDown={handleButtonMouseDown}
           icon={<MinimizeIcon />}
         />
 
@@ -106,6 +113,7 @@ export function TitleBar({ baseTheme }: TitleBarProps) {
           color={buttonColor}
           _hover={{ bg: buttonHoverBg }}
           onClick={handleMaximize}
+          onMouseDown={handleButtonMouseDown}
           icon={<FiMaximize2 size={14} />}
         />
 
@@ -116,6 +124,7 @@ export function TitleBar({ baseTheme }: TitleBarProps) {
           color="red.400"
           _hover={{ bg: "red.500", color: "white" }}
           onClick={handleClose}
+          onMouseDown={handleButtonMouseDown}
           icon={<FiX size={16} />}
         />
       </HStack>

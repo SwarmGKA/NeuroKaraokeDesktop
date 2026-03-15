@@ -4,8 +4,6 @@ import {
   Box,
   HStack,
   Flex,
-  Spinner,
-  Center,
 } from "@chakra-ui/react";
 import { AnimatePresence } from "framer-motion";
 import { Store } from "@tauri-apps/plugin-store";
@@ -52,7 +50,6 @@ function AppContent() {
   const [currentPage, setCurrentPage] = useState<Page>("home");
   const [baseTheme, setBaseTheme] = useState<BaseTheme>("dark");
   const [accentTheme, setAccentTheme] = useState<AccentTheme>("neuro");
-  const [isLoading, setIsLoading] = useState(true);
   const [store, setStore] = useState<Store | null>(null);
   const { language, setLanguage } = useI18n();
   const sidebarRef = useRef<HTMLDivElement>(null);
@@ -69,21 +66,17 @@ function AppContent() {
 
         setStore(storeInstance);
 
-        const savedBaseTheme = await storeInstance.get<BaseTheme>("base-theme");
-        const savedAccentTheme = await storeInstance.get<AccentTheme>("accent-theme");
+        const [savedBaseTheme, savedAccentTheme] = await Promise.all([
+          storeInstance.get<BaseTheme>("base-theme"),
+          storeInstance.get<AccentTheme>("accent-theme"),
+        ]);
 
-        if (savedBaseTheme && mounted) {
-          setBaseTheme(savedBaseTheme);
-        }
-        if (savedAccentTheme && mounted) {
-          setAccentTheme(savedAccentTheme);
+        if (mounted) {
+          if (savedBaseTheme) setBaseTheme(savedBaseTheme);
+          if (savedAccentTheme) setAccentTheme(savedAccentTheme);
         }
       } catch (error) {
         console.error("Failed to load settings:", error);
-      } finally {
-        if (mounted) {
-          setIsLoading(false);
-        }
       }
     }
 
@@ -128,76 +121,60 @@ function AppContent() {
   const theme = createAppTheme(baseTheme, accentTheme);
 
   const renderPage = () => {
-    const pageContent = (() => {
-      switch (currentPage) {
-        case "home":
-          return <Home />;
-        case "search":
-          return <Search />;
-        case "random":
-          return <Random />;
-        case "explore":
-          return <Explore />;
-        case "artists":
-          return <Artists />;
-        case "karaokePlaylist":
-          return <KaraokePlaylist />;
-        case "karaokeQuiz":
-          return <KaraokeQuiz />;
-        case "listenTogether":
-          return <ListenTogether />;
-        case "radio":
-          return <Radio />;
-        case "about":
-          return <About />;
-        case "favorites":
-          return <Favorites />;
-        case "downloads":
-          return <Downloads />;
-        case "playlists":
-          return <Playlists />;
-        case "uploaded":
-          return <Uploaded />;
-        case "artGallery":
-          return <ArtGallery />;
-        case "videoLibrary":
-          return <VideoLibrary />;
-        case "audioClips":
-          return <AudioClips />;
-        case "communityCanvas":
-          return <CommunityCanvas />;
-        case "quotes":
-          return <Quotes />;
-        case "settings":
-          return (
-            <ThemeSettings
-              baseTheme={baseTheme}
-              accentTheme={accentTheme}
-              language={language}
-              onBaseThemeChange={handleBaseThemeChange}
-              onAccentThemeChange={handleAccentThemeChange}
-              onLanguageChange={handleLanguageChange}
-            />
-          );
-        default:
-          return <Home />;
-      }
-    })();
-
-    return (
-      <PageTransition key={currentPage}>
-        {pageContent}
-      </PageTransition>
-    );
+    switch (currentPage) {
+      case "home":
+        return <Home />;
+      case "search":
+        return <Search />;
+      case "random":
+        return <Random />;
+      case "explore":
+        return <Explore />;
+      case "artists":
+        return <Artists />;
+      case "karaokePlaylist":
+        return <KaraokePlaylist />;
+      case "karaokeQuiz":
+        return <KaraokeQuiz />;
+      case "listenTogether":
+        return <ListenTogether />;
+      case "radio":
+        return <Radio />;
+      case "about":
+        return <About />;
+      case "favorites":
+        return <Favorites />;
+      case "downloads":
+        return <Downloads />;
+      case "playlists":
+        return <Playlists />;
+      case "uploaded":
+        return <Uploaded />;
+      case "artGallery":
+        return <ArtGallery />;
+      case "videoLibrary":
+        return <VideoLibrary />;
+      case "audioClips":
+        return <AudioClips />;
+      case "communityCanvas":
+        return <CommunityCanvas />;
+      case "quotes":
+        return <Quotes />;
+      case "settings":
+        return (
+          <ThemeSettings
+            baseTheme={baseTheme}
+            accentTheme={accentTheme}
+            language={language}
+            onBaseThemeChange={handleBaseThemeChange}
+            onAccentThemeChange={handleAccentThemeChange}
+            onLanguageChange={handleLanguageChange}
+          />
+        );
+      default:
+        return <Home />;
+    }
   };
-
-  if (isLoading) {
-    return (
-      <Center w="100vw" h="100vh" bg={baseTheme === "dark" ? "#1a1a1a" : "#ffffff"}>
-        <Spinner size="xl" color={accentColor} />
-      </Center>
-    );
-  }
 
   return (
     <ChakraProvider theme={theme} key={baseTheme}>
@@ -207,7 +184,6 @@ function AppContent() {
         bg={baseTheme === "dark" ? "#1a1a1a" : "#ffffff"}
         color={baseTheme === "dark" ? "white" : "#1a1a1a"}
         overflow="hidden"
-        borderRadius="12px"
         transition="background-color 0.3s ease"
       >
         <Flex direction="column" h="full">
@@ -238,7 +214,9 @@ function AppContent() {
               position="relative"
             >
               <AnimatePresence mode="wait">
-                {renderPage()}
+                <PageTransition key={currentPage}>
+                  {renderPage()}
+                </PageTransition>
               </AnimatePresence>
             </Box>
           </HStack>
