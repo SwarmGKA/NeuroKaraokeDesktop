@@ -95,7 +95,7 @@ impl ApiClient {
     }
 
     pub async fn get_playlist(&self, id: &str) -> Result<Playlist> {
-        let url = format!("{}/api/playlists/{}", API_BASE_URL, id);
+        let url = format!("{}/public/playlist/{}", IDK_BASE_URL, id);
         self.get(&url).await
     }
 
@@ -148,7 +148,7 @@ impl ApiClient {
     }
 
     pub async fn get_radio_current_state(&self) -> Result<RadioState> {
-        let url = format!("{}/api/radio/state", RADIO_SOCKET_URL);
+        let url = format!("{}/api/radio/current-state", RADIO_SOCKET_URL);
         self.get(&url).await
     }
 

@@ -1,6 +1,8 @@
 use tauri::Window;
 
 mod api;
+#[cfg(test)]
+mod api_tests;
 
 use api::{ApiClient, models::*};
 
