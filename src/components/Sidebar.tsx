@@ -230,8 +230,7 @@ export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(
         <Box
           position="absolute"
           right={0}
-          top="50%"
-          transform="translateY(-50%)"
+          bottom={4}
           zIndex={1}
         >
           <Button
