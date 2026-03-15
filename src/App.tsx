@@ -17,11 +17,9 @@ import {
   Search,
   Random,
   Explore,
-  Artists,
   KaraokePlaylist,
   KaraokeQuiz,
   ListenTogether,
-  Radio,
   About,
   Favorites,
   Downloads,
@@ -50,6 +48,7 @@ function AppContent() {
   const [currentPage, setCurrentPage] = useState<Page>("home");
   const [baseTheme, setBaseTheme] = useState<BaseTheme>("dark");
   const [accentTheme, setAccentTheme] = useState<AccentTheme>("neuro");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [store, setStore] = useState<Store | null>(null);
   const { language, setLanguage } = useI18n();
   const sidebarRef = useRef<HTMLDivElement>(null);
@@ -130,16 +129,12 @@ function AppContent() {
         return <Random />;
       case "explore":
         return <Explore />;
-      case "artists":
-        return <Artists />;
       case "karaokePlaylist":
         return <KaraokePlaylist />;
       case "karaokeQuiz":
         return <KaraokeQuiz />;
       case "listenTogether":
         return <ListenTogether />;
-      case "radio":
-        return <Radio />;
       case "about":
         return <About />;
       case "favorites":

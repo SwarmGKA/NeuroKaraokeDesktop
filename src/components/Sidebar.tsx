@@ -69,11 +69,9 @@ export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(
       { id: "search", icon: FiSearch, labelKey: "sidebar.search" },
       { id: "random", icon: FiShuffle, labelKey: "sidebar.random" },
       { id: "explore", icon: FiCompass, labelKey: "sidebar.explore" },
-      { id: "artists", icon: FiUsers, labelKey: "sidebar.artists" },
       { id: "karaokePlaylist", icon: FiList, labelKey: "sidebar.karaokePlaylist" },
       { id: "karaokeQuiz", icon: FiHelpCircle, labelKey: "sidebar.karaokeQuiz" },
       { id: "listenTogether", icon: FiHeadphones, labelKey: "sidebar.listenTogether" },
-      { id: "radio", icon: FiRadio, labelKey: "sidebar.radio" },
       { id: "about", icon: FiInfo, labelKey: "sidebar.about" },
     ];
 
