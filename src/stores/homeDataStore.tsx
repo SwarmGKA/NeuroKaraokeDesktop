@@ -46,6 +46,20 @@ export function getThumbnailUrl(cloudflareId: string | undefined): string | unde
   return `https://images.neurokaraoke.com/${cloudflareId}/public`
 }
 
+// 图片 URL 别名
+export function getImageUrl(cloudflareId: string | undefined): string | undefined {
+  return getThumbnailUrl(cloudflareId)
+}
+
+// 音频 URL 生成
+const STORAGE_URL = 'https://storage.neurokaraoke.com'
+
+export function getAudioUrl(absolutePath: string | undefined): string | undefined {
+  if (!absolutePath) return undefined
+  if (absolutePath.startsWith('http')) return absolutePath
+  return `${STORAGE_URL}${absolutePath.startsWith('/') ? '' : '/'}${absolutePath}`
+}
+
 export function HomeDataProvider({ children }: { children: React.ReactNode }) {
   // 推荐歌单状态
   const [officialPlaylists, setOfficialPlaylists] = useState<Playlist[]>([])

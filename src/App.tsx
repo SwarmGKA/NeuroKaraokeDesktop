@@ -7,6 +7,7 @@ import { Sidebar, Page } from './components/Sidebar'
 import { UserPanel } from './components/UserPanel'
 import { UserCardDialog } from './components/UserCardDialog'
 import { PageTransition } from './components/PageTransition'
+import { MiniPlayer, FullScreenPlayer } from './components/player'
 import {
   Home,
   Search,
@@ -30,6 +31,7 @@ import {
 import { createAppTheme } from './theme'
 import { useThemeStore, BaseTheme, AccentTheme } from './hooks/useThemeStore'
 import { HomeDataProvider } from './stores/homeDataStore'
+import { PlayerProvider } from './stores/playerStore'
 
 const STORAGE_KEY = 'sidebar-collapsed'
 
@@ -201,7 +203,15 @@ function AppContent() {
                 </AnimatePresence>
               </div>
             </Flex>
+
+            {/* 底部播放器栏 */}
+            <MiniPlayer baseTheme={baseTheme} accentColor={accentColor} />
           </Flex>
+
+          {/* 全屏播放器 */}
+          <AnimatePresence>
+            <FullScreenPlayer accentColor={accentColor} />
+          </AnimatePresence>
 
           <UserCardDialog
             isOpen={userCardOpen}
@@ -223,7 +233,9 @@ function App() {
   return (
     <I18nProvider>
       <HomeDataProvider>
-        <AppContent />
+        <PlayerProvider>
+          <AppContent />
+        </PlayerProvider>
       </HomeDataProvider>
     </I18nProvider>
   )

@@ -1,9 +1,10 @@
 import { Card, Skeleton, Typography, Flex, Tag } from 'antd'
 import { motion } from 'framer-motion'
-import { FireOutlined } from '@ant-design/icons'
-import type { TrendingSong } from '../../types/api'
+import { FireOutlined, PlayCircleOutlined } from '@ant-design/icons'
+import type { TrendingSong, Song } from '../../types/api'
 import { getThumbnailUrl } from '../../stores/homeDataStore'
 import { useI18n } from '../../i18n'
+import { usePlayer } from '../../stores/playerStore'
 
 const { Text } = Typography
 
@@ -13,6 +14,25 @@ interface TrendingGridProps {
   error: string | null
 }
 
+// 将 TrendingSong 转换为 Song 格式
+function trendingSongToSong(song: TrendingSong): Song {
+  return {
+    id: song.id,
+    title: song.title,
+    absolutePath: song.absolutePath,
+    duration: song.duration,
+    playCount: song.playCount,
+    streamDate: song.streamDate,
+    dateAdded: song.dateAdded,
+    coverArtists: song.coverArtists?.map(name => ({ name })),
+    originalArtists: song.originalArtists?.map(name => ({ name })),
+    coverArt: song.coverArt ? {
+      cloudflareId: song.coverArt.cloudflareId,
+      absolutePath: song.coverArt.absolutePath,
+    } : undefined,
+  }
+}
+
 // 单个歌曲卡片
 function TrendingSongCard({
   song,
@@ -20,7 +40,8 @@ function TrendingSongCard({
   hotBadgeText,
   unknownArtistText,
   coverAltText,
-  defaultTitleText
+  defaultTitleText,
+  onPlay,
 }: {
   song: TrendingSong
   index: number
@@ -28,6 +49,7 @@ function TrendingSongCard({
   unknownArtistText: string
   coverAltText: string
   defaultTitleText: string
+  onPlay: () => void
 }) {
   const coverUrl = song.coverArt?.cloudflareId
     ? getThumbnailUrl(song.coverArt.cloudflareId)
@@ -43,6 +65,7 @@ function TrendingSongCard({
     >
       <Card
         hoverable
+        onClick={onPlay}
         style={{
           borderRadius: 12,
           overflow: 'hidden',
@@ -62,6 +85,7 @@ function TrendingSongCard({
               borderRadius: 8,
               overflow: 'hidden',
               flexShrink: 0,
+              position: 'relative',
             }}
           >
             {coverUrl ? (
@@ -85,6 +109,25 @@ function TrendingSongCard({
                 <Text style={{ color: '#fff', fontSize: 20 }}>♪</Text>
               </div>
             )}
+            {/* 悬浮播放图标 */}
+            <div
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'rgba(0,0,0,0.4)',
+                opacity: 0,
+                transition: 'opacity 0.2s ease',
+              }}
+              className="play-overlay"
+            >
+              <PlayCircleOutlined style={{ fontSize: 24, color: '#fff' }} />
+            </div>
           </div>
 
           {/* 信息 */}
@@ -116,6 +159,16 @@ function TrendingSongCard({
           )}
         </Flex>
       </Card>
+
+      {/* 悬浮样式 */}
+      <style>{`
+        .play-overlay {
+          opacity: 0;
+        }
+        .ant-card:hover .play-overlay {
+          opacity: 1;
+        }
+      `}</style>
     </motion.div>
   )
 }
@@ -137,6 +190,7 @@ function SkeletonSongCard() {
 
 export function TrendingGrid({ songs, loading, error }: TrendingGridProps) {
   const { t } = useI18n()
+  const { playSong } = usePlayer()
 
   // 显示前12首歌曲，分两列
   const displaySongs = songs.slice(0, 12)
@@ -144,6 +198,15 @@ export function TrendingGrid({ songs, loading, error }: TrendingGridProps) {
   const unknownArtistText = t('song.unknownArtist')
   const coverAltText = t('song.coverAlt')
   const defaultTitleText = t('song.defaultTitle')
+
+  // 播放歌曲
+  const handlePlay = (song: TrendingSong, index: number) => {
+    // 将所有歌曲转换为 Song 格式
+    const allSongs = displaySongs.map((s) => trendingSongToSong(s))
+    const currentSong = trendingSongToSong(song)
+
+    playSong(currentSong, allSongs, index)
+  }
 
   return (
     <div style={{ marginBottom: 32 }}>
@@ -179,6 +242,7 @@ export function TrendingGrid({ songs, loading, error }: TrendingGridProps) {
               unknownArtistText={unknownArtistText}
               coverAltText={coverAltText}
               defaultTitleText={defaultTitleText}
+              onPlay={() => handlePlay(song, index)}
             />
           ))
         )}
