@@ -1,12 +1,6 @@
 import { ipcRenderer, contextBridge } from 'electron'
 
-contextBridge.exposeInMainWorld('electronAPI', {
-  minimizeWindow: () => ipcRenderer.send('window:minimize'),
-  maximizeWindow: () => ipcRenderer.send('window:maximize'),
-  closeWindow: () => ipcRenderer.send('window:close'),
-  startDragging: () => ipcRenderer.send('window:start-dragging'),
-})
-
+// --------- Expose some API to the Renderer process ---------
 contextBridge.exposeInMainWorld('ipcRenderer', {
   on(...args: Parameters<typeof ipcRenderer.on>) {
     const [channel, listener] = args
