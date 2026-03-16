@@ -99,8 +99,9 @@ ipcMain.on('window-close', (event) => {
   getWindowFromWebContents(event.sender)?.close()
 })
 
-ipcMain.on('window-start-drag', (event) => {
-  getWindowFromWebContents(event.sender)?.startDragging()
+// 窗口拖拽已通过 CSS -webkit-app-region: drag 实现，此处无需处理
+ipcMain.on('window-start-drag', () => {
+  // 窗口拖拽由前端 CSS 处理
 })
 
 // ========== API 调用 IPC ==========

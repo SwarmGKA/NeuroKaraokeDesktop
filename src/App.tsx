@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { ConfigProvider, App as AntApp, Flex, Box } from 'antd'
+import { ConfigProvider, App as AntApp, Flex } from 'antd'
 import { AnimatePresence } from 'framer-motion'
 import { I18nProvider, useI18n, Language } from './i18n'
 import { TitleBar } from './components/TitleBar'
@@ -153,7 +153,7 @@ function AppContent() {
   return (
     <ConfigProvider theme={theme}>
       <AntApp>
-        <Box
+        <div
           style={{
             width: '100vw',
             height: '100vh',
@@ -185,9 +185,9 @@ function AppContent() {
                 />
               </Flex>
 
-              <Box
-                flex={1}
+              <div
                 style={{
+                  flex: 1,
                   overflow: 'auto',
                   backgroundColor: isDark ? '#1a1a1a' : '#ffffff',
                   position: 'relative',
@@ -198,7 +198,7 @@ function AppContent() {
                     {renderPage()}
                   </PageTransition>
                 </AnimatePresence>
-              </Box>
+              </div>
             </Flex>
           </Flex>
 
@@ -212,7 +212,7 @@ function AppContent() {
               handlePageChange('settings')
             }}
           />
-        </Box>
+        </div>
       </AntApp>
     </ConfigProvider>
   )

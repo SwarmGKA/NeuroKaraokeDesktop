@@ -12,27 +12,7 @@ const I18nContext = createContext<I18nContextType | null>(null)
 
 const STORAGE_KEY = 'language-settings'
 
-// 解析 .properties 文件
-function parseProperties(content: string): Record<string, string> {
-  const result: Record<string, string> = {}
-  const lines = content.split('\n')
-
-  for (const line of lines) {
-    const trimmed = line.trim()
-    if (!trimmed || trimmed.startsWith('#')) continue
-
-    const eqIndex = trimmed.indexOf('=')
-    if (eqIndex === -1) continue
-
-    const key = trimmed.substring(0, eqIndex).trim()
-    const value = trimmed.substring(eqIndex + 1).trim()
-    result[key] = value
-  }
-
-  return result
-}
-
-// 内置翻译（作为备份）
+// 内置翻译
 const fallbackTranslations: Record<Language, Record<string, string>> = {
   zh: {
     'app.title': 'Neuro Karaoke',

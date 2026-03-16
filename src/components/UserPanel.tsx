@@ -1,6 +1,5 @@
 import { Flex, Avatar, Button, Typography } from 'antd'
 import { SettingOutlined } from '@ant-design/icons'
-import { useI18n } from '../i18n'
 
 const { Text } = Typography
 
@@ -17,7 +16,6 @@ export function UserPanel({
   accentColor,
   baseTheme,
 }: UserPanelProps) {
-  const { t } = useI18n()
   const isDark = baseTheme === 'dark'
 
   return (
