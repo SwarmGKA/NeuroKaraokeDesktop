@@ -1,5 +1,5 @@
 import { forwardRef } from 'react'
-import { Flex, Button, Box, Typography, Space } from 'antd'
+import { Flex, Button, Typography } from 'antd'
 import { useI18n } from '../i18n'
 import {
   HomeOutlined,
@@ -21,8 +21,7 @@ import {
   MessageOutlined,
   LeftOutlined,
   RightOutlined,
-  SettingOutlined,
-  MicOutlined,
+  SoundOutlined,
 } from '@ant-design/icons'
 
 const { Text } = Typography
@@ -155,7 +154,7 @@ export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(
             justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
           }}
         >
-          <Box
+          <div
             style={{
               width: 32,
               height: 32,
@@ -166,8 +165,8 @@ export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(
               justifyContent: 'center',
             }}
           >
-            <MicOutlined style={{ color: '#000', fontSize: 20 }} />
-          </Box>
+            <SoundOutlined style={{ color: '#000', fontSize: 20 }} />
+          </div>
           {!sidebarCollapsed && (
             <Text style={{ fontSize: 16, fontWeight: 600, color: accentColor }}>
               {t('app.title')}
@@ -196,7 +195,7 @@ export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(
 
           {/* 分隔线 */}
           {!sidebarCollapsed && (
-            <Box
+            <div
               style={{
                 height: 1,
                 backgroundColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)',
@@ -225,7 +224,7 @@ export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(
 
           {/* 分隔线 */}
           {!sidebarCollapsed && (
-            <Box
+            <div
               style={{
                 height: 1,
                 backgroundColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)',
@@ -254,7 +253,7 @@ export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(
         </Flex>
 
         {/* 折叠按钮 */}
-        <Box
+        <div
           style={{
             position: 'absolute',
             right: 0,
@@ -271,7 +270,7 @@ export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(
             }}
             onClick={onToggleCollapse}
           />
-        </Box>
+        </div>
       </Flex>
     )
   }

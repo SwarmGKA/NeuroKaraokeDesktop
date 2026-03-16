@@ -8,21 +8,6 @@ interface TitleBarProps {
   baseTheme: 'light' | 'dark'
 }
 
-// 自定义最小化图标
-function MinimizeIcon() {
-  return (
-    <svg
-      width="12"
-      height="12"
-      viewBox="0 0 12 12"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <rect x="1" y="9" width="10" height="2" fill="currentColor" />
-    </svg>
-  )
-}
-
 export function TitleBar({ baseTheme }: TitleBarProps) {
   const { t } = useI18n()
 
@@ -31,7 +16,7 @@ export function TitleBar({ baseTheme }: TitleBarProps) {
   const textColor = isDark ? '#ffffff' : '#1a1a1a'
   const borderColor = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'
 
-  const handleMinimize = async (e: React.MouseEvent) => {
+  const handleMinimize = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
     try {
@@ -41,7 +26,7 @@ export function TitleBar({ baseTheme }: TitleBarProps) {
     }
   }
 
-  const handleMaximize = async (e: React.MouseEvent) => {
+  const handleMaximize = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
     try {
@@ -51,7 +36,7 @@ export function TitleBar({ baseTheme }: TitleBarProps) {
     }
   }
 
-  const handleClose = async (e: React.MouseEvent) => {
+  const handleClose = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
     try {
@@ -61,7 +46,7 @@ export function TitleBar({ baseTheme }: TitleBarProps) {
     }
   }
 
-  const handleMouseDown = async () => {
+  const handleMouseDown = () => {
     try {
       window.electronAPI.startDragging()
     } catch (error) {
@@ -74,7 +59,7 @@ export function TitleBar({ baseTheme }: TitleBarProps) {
     e.stopPropagation()
   }
 
-  const buttonStyle = {
+  const buttonStyle: React.CSSProperties = {
     width: 40,
     height: 32,
     border: 'none',
@@ -83,56 +68,14 @@ export function TitleBar({ baseTheme }: TitleBarProps) {
   }
 
   return (
-    <Flex
-      align="center"
-      justify="space-between"
-      style={{
-        width: '100%',
-        height: 32,
-        paddingLeft: 16,
-        backgroundColor: bgColor,
-        borderBottom: `1px solid ${borderColor}`,
-        cursor: 'default',
-        userSelect: 'none',
-        WebkitAppRegion: 'drag' as const,
-      }}
-      onMouseDown={handleMouseDown}
-    >
-      <Text style={{ fontSize: 13, fontWeight: 500, color: textColor }}>
-        {t('app.title')}
-      </Text>
-
-      <Flex style={{ WebkitAppRegion: 'no-drag' as const }}>
-        <Button
-          type="text"
-          style={buttonStyle}
-          icon={<MinusOutlined />}
-          onClick={handleMinimize}
-          onMouseDown={handleButtonMouseDown}
-          className="title-bar-button"
-        />
-        <Button
-          type="text"
-          style={buttonStyle}
-          icon={<BorderOutlined />}
-          onClick={handleMaximize}
-          onMouseDown={handleButtonMouseDown}
-          className="title-bar-button"
-        />
-        <Button
-          type="text"
-          style={{
-            ...buttonStyle,
-            color: '#f90e6a',
-          }}
-          icon={<CloseOutlined />}
-          onClick={handleClose}
-          onMouseDown={handleButtonMouseDown}
-          className="title-bar-button close-button"
-        />
-      </Flex>
-
+    <>
       <style>{`
+        .title-bar-root {
+          -webkit-app-region: drag;
+        }
+        .title-bar-buttons {
+          -webkit-app-region: no-drag;
+        }
         .title-bar-button:hover {
           background-color: ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'} !important;
         }
@@ -141,6 +84,55 @@ export function TitleBar({ baseTheme }: TitleBarProps) {
           color: white !important;
         }
       `}</style>
-    </Flex>
+      <Flex
+        align="center"
+        justify="space-between"
+        className="title-bar-root"
+        style={{
+          width: '100%',
+          height: 32,
+          paddingLeft: 16,
+          backgroundColor: bgColor,
+          borderBottom: `1px solid ${borderColor}`,
+          cursor: 'default',
+          userSelect: 'none',
+        }}
+        onMouseDown={handleMouseDown}
+      >
+        <Text style={{ fontSize: 13, fontWeight: 500, color: textColor }}>
+          {t('app.title')}
+        </Text>
+
+        <Flex className="title-bar-buttons">
+          <Button
+            type="text"
+            style={buttonStyle}
+            icon={<MinusOutlined />}
+            onClick={handleMinimize}
+            onMouseDown={handleButtonMouseDown}
+            className="title-bar-button"
+          />
+          <Button
+            type="text"
+            style={buttonStyle}
+            icon={<BorderOutlined />}
+            onClick={handleMaximize}
+            onMouseDown={handleButtonMouseDown}
+            className="title-bar-button"
+          />
+          <Button
+            type="text"
+            style={{
+              ...buttonStyle,
+              color: '#f90e6a',
+            }}
+            icon={<CloseOutlined />}
+            onClick={handleClose}
+            onMouseDown={handleButtonMouseDown}
+            className="title-bar-button close-button"
+          />
+        </Flex>
+      </Flex>
+    </>
   )
 }

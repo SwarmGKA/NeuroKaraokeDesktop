@@ -81,11 +81,11 @@ app.on('activate', () => {
 // ========== 窗口控制 IPC ==========
 
 ipcMain.on('window-minimize', (event) => {
-  event.sender.getOwnerBrowserWindow()?.minimize()
+  getWindowFromWebContents(event.sender)?.minimize()
 })
 
 ipcMain.on('window-maximize', (event) => {
-  const window = event.sender.getOwnerBrowserWindow()
+  const window = getWindowFromWebContents(event.sender)
   if (window) {
     if (window.isMaximized()) {
       window.unmaximize()
@@ -96,11 +96,11 @@ ipcMain.on('window-maximize', (event) => {
 })
 
 ipcMain.on('window-close', (event) => {
-  event.sender.getOwnerBrowserWindow()?.close()
+  getWindowFromWebContents(event.sender)?.close()
 })
 
 ipcMain.on('window-start-drag', (event) => {
-  event.sender.getOwnerBrowserWindow()?.startDragging()
+  getWindowFromWebContents(event.sender)?.startDragging()
 })
 
 // ========== API 调用 IPC ==========
