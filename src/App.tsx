@@ -29,6 +29,7 @@ import {
 } from './pages'
 import { createAppTheme } from './theme'
 import { useThemeStore, BaseTheme, AccentTheme } from './hooks/useThemeStore'
+import { HomeDataProvider } from './stores/homeDataStore'
 
 const STORAGE_KEY = 'sidebar-collapsed'
 
@@ -221,7 +222,9 @@ function AppContent() {
 function App() {
   return (
     <I18nProvider>
-      <AppContent />
+      <HomeDataProvider>
+        <AppContent />
+      </HomeDataProvider>
     </I18nProvider>
   )
 }
