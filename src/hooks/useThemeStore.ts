@@ -1,79 +1,67 @@
-import { useState, useEffect, useCallback } from "react";
-import { Store } from "@tauri-apps/plugin-store";
-import { BaseTheme, AccentTheme, ThemeState, defaultThemeState } from "../theme";
+import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { BaseTheme, AccentTheme } from "../theme";
 
-const STORE_NAME = "theme-store.json";
-const THEME_KEY = "theme-state";
+interface ThemeContextValue {
+  baseTheme: BaseTheme;
+  accentTheme: AccentTheme;
+  setBaseTheme: (theme: BaseTheme) => void;
+  setAccentTheme: (theme: AccentTheme) => void;
+}
 
-export function useThemeStore() {
-  const [theme, setThemeState] = useState<ThemeState>(defaultThemeState);
-  const [isLoading, setIsLoading] = useState(true);
-  const [store, setStore] = useState<Store | null>(null);
+const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
+
+const BASE_THEME_KEY = "neurokaraoke-base-theme";
+const ACCENT_THEME_KEY = "neurokaraoke-accent-theme";
+
+interface ThemeProviderProps {
+  children: ReactNode;
+}
+
+export function ThemeProvider({ children }: ThemeProviderProps) {
+  const [baseTheme, setBaseThemeState] = useState<BaseTheme>(() => {
+    const stored = localStorage.getItem(BASE_THEME_KEY);
+    return (stored as BaseTheme) || "dark";
+  });
+
+  const [accentTheme, setAccentThemeState] = useState<AccentTheme>(() => {
+    const stored = localStorage.getItem(ACCENT_THEME_KEY);
+    return (stored as AccentTheme) || "neuro";
+  });
 
   useEffect(() => {
-    let mounted = true;
+    localStorage.setItem(BASE_THEME_KEY, baseTheme);
+  }, [baseTheme]);
 
-    async function initStore() {
-      try {
-        const storeInstance = await Store.load(STORE_NAME);
-        if (!mounted) return;
+  useEffect(() => {
+    localStorage.setItem(ACCENT_THEME_KEY, accentTheme);
+  }, [accentTheme]);
 
-        setStore(storeInstance);
-
-        const savedTheme = await storeInstance.get<ThemeState>(THEME_KEY);
-        if (savedTheme && mounted) {
-          setThemeState(savedTheme);
-        }
-      } catch (error) {
-        console.error("Failed to load theme store:", error);
-      } finally {
-        if (mounted) {
-          setIsLoading(false);
-        }
-      }
-    }
-
-    initStore();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  const setTheme = useCallback(
-    async (newTheme: ThemeState) => {
-      setThemeState(newTheme);
-      if (store) {
-        try {
-          await store.set(THEME_KEY, newTheme);
-          await store.save();
-        } catch (error) {
-          console.error("Failed to save theme:", error);
-        }
-      }
-    },
-    [store]
-  );
-
-  const setBaseTheme = useCallback(
-    async (base: BaseTheme) => {
-      await setTheme({ ...theme, base });
-    },
-    [theme, setTheme]
-  );
-
-  const setAccentTheme = useCallback(
-    async (accent: AccentTheme) => {
-      await setTheme({ ...theme, accent });
-    },
-    [theme, setTheme]
-  );
-
-  return {
-    theme,
-    isLoading,
-    setTheme,
-    setBaseTheme,
-    setAccentTheme,
+  const setBaseTheme = (theme: BaseTheme) => {
+    setBaseThemeState(theme);
   };
+
+  const setAccentTheme = (theme: AccentTheme) => {
+    setAccentThemeState(theme);
+  };
+
+  return (
+    <ThemeContext.Provider
+      value={{
+        baseTheme,
+        accentTheme,
+        setBaseTheme,
+        setAccentTheme,
+      }}
+    >
+      {children}
+    </ThemeContext.Provider>
+  );
+}
+
+export function useThemeStore() {
+  const context = useContext(ThemeContext);
+  if (context === undefined) {
+    throw new Error("useThemeStore must be used within a ThemeProvider");
+  }
+  return context;
 }
