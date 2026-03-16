@@ -6,6 +6,7 @@ export const RADIO_SOCKET_URL = 'https://socket.neurokaraoke.com';
 export const RADIO_STREAM_URL = 'https://radio.twinskaraoke.com';
 export const IMAGE_CDN_URL = 'https://images.neurokaraoke.com';
 export const STORAGE_URL = 'https://storage.neurokaraoke.com';
+export const HLS_BASE_URL = 'https://hls.neurokaraoke.com';
 
 // 图片 URL 生成函数
 export function getImageUrl(cloudflareId: string | undefined, fallbackPath?: string): string | undefined {
@@ -26,6 +27,13 @@ export function getAudioUrl(absolutePath: string | undefined): string | undefine
   if (!absolutePath) return undefined;
   if (absolutePath.startsWith('http')) return absolutePath;
   return `${STORAGE_URL}${absolutePath.startsWith('/') ? '' : '/'}${absolutePath}`;
+}
+
+// HLS 流 URL 生成函数
+export function getHlsUrl(hlsPath: string | undefined): string | undefined {
+  if (!hlsPath) return undefined;
+  if (hlsPath.startsWith('http')) return hlsPath;
+  return `${HLS_BASE_URL}/${hlsPath}`;
 }
 
 async function handleResponse<T>(response: globalThis.Response): Promise<T> {

@@ -1,4 +1,5 @@
 import { createContext, useContext, useReducer, useCallback, useRef, useEffect } from 'react'
+import Hls from 'hls.js'
 import type { Song, Lyric } from '../types/api'
 import { getAudioUrl } from './homeDataStore'
 
@@ -37,6 +38,8 @@ export interface PlayerState {
   isBuffering: boolean
   // 封面主色调
   coverColor: string
+  // 加载状态
+  isLoading: boolean
 }
 
 // 初始状态
@@ -56,6 +59,7 @@ const initialState: PlayerState = {
   showLyrics: false,
   isBuffering: false,
   coverColor: '#667eea',
+  isLoading: false,
 }
 
 // Action 类型
@@ -75,6 +79,7 @@ type PlayerAction =
   | { type: 'TOGGLE_LYRICS' }
   | { type: 'SET_BUFFERING'; isBuffering: boolean }
   | { type: 'SET_COVER_COLOR'; color: string }
+  | { type: 'SET_LOADING'; isLoading: boolean }
   | { type: 'NEXT_SONG' }
   | { type: 'PREV_SONG' }
 
@@ -111,6 +116,8 @@ function playerReducer(state: PlayerState, action: PlayerAction): PlayerState {
       return { ...state, isBuffering: action.isBuffering }
     case 'SET_COVER_COLOR':
       return { ...state, coverColor: action.color }
+    case 'SET_LOADING':
+      return { ...state, isLoading: action.isLoading }
     case 'NEXT_SONG': {
       if (state.playlist.length === 0) return state
       let nextIndex: number
@@ -153,7 +160,6 @@ function playerReducer(state: PlayerState, action: PlayerAction): PlayerState {
 // Context
 interface PlayerContextType {
   state: PlayerState
-  audioRef: React.RefObject<HTMLAudioElement | null>
   // 播放控制
   play: () => void
   pause: () => void
@@ -177,10 +183,26 @@ interface PlayerContextType {
 
 const PlayerContext = createContext<PlayerContextType | null>(null)
 
+// 播放备用音频（非 HLS）
+function playFallbackAudio(audio: HTMLAudioElement, song: Song): void {
+  let fallbackUrl: string | undefined
+  if (song.audioUrl) {
+    fallbackUrl = song.audioUrl
+  } else if (song.absolutePath) {
+    fallbackUrl = getAudioUrl(song.absolutePath)
+  }
+
+  if (fallbackUrl && fallbackUrl !== audio.src) {
+    audio.src = fallbackUrl
+    audio.load()
+  }
+}
+
 // Provider
 export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(playerReducer, initialState)
   const audioRef = useRef<HTMLAudioElement | null>(null)
+  const hlsRef = useRef<Hls | null>(null)
 
   // 创建 audio 元素
   useEffect(() => {
@@ -235,6 +257,9 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     return () => {
       audio.pause()
       audio.src = ''
+      if (hlsRef.current) {
+        hlsRef.current.destroy()
+      }
     }
   }, [])
 
@@ -257,31 +282,6 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
 
     return () => audio.removeEventListener('ended', handleEnded)
   }, [state.playMode])
-
-  // 当歌曲改变时更新音频源
-  useEffect(() => {
-    const audio = audioRef.current
-    if (!audio || !state.currentSong) return
-
-    // 获取音频 URL
-    let audioUrl: string | undefined
-    if (state.currentSong.hls) {
-      // HLS 流
-      audioUrl = state.currentSong.hls
-    } else if (state.currentSong.audioUrl) {
-      audioUrl = state.currentSong.audioUrl
-    } else if (state.currentSong.absolutePath) {
-      audioUrl = getAudioUrl(state.currentSong.absolutePath)
-    }
-
-    if (audioUrl && audioUrl !== audio.src) {
-      audio.src = audioUrl
-      audio.load()
-      if (state.isPlaying) {
-        audio.play().catch(console.error)
-      }
-    }
-  }, [state.currentSong, state.isPlaying])
 
   // 更新当前歌词
   const updateCurrentLyric = useCallback((currentTime: number) => {
@@ -312,6 +312,104 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     }
     return 0
   }
+
+  // 当歌曲改变时更新音频源（支持 HLS 流式播放）
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio || !state.currentSong) return
+
+    // 获取音频源：优先 audioUrl，然后 absolutePath，最后 hls（仅当是完整 URL 时）
+    const song = state.currentSong
+    let hlsUrl: string | undefined
+
+    // 检查是否有完整的音频 URL
+    const hasDirectAudio = song.audioUrl || song.absolutePath
+
+    // 只有当没有直接音频 URL 且 HLS 是完整 URL 时才使用 HLS
+    if (!hasDirectAudio && song.hls?.startsWith('http')) {
+      hlsUrl = song.hls
+    }
+
+    // 清理之前的 HLS 实例
+    if (hlsRef.current) {
+      hlsRef.current.destroy()
+      hlsRef.current = null
+    }
+
+    if (hlsUrl) {
+      // 使用 HLS 流式播放
+      if (Hls.isSupported()) {
+        const hls = new Hls({
+          enableWorker: true,
+          lowLatencyMode: true,
+        })
+        hlsRef.current = hls
+
+        hls.loadSource(hlsUrl)
+        hls.attachMedia(audio)
+
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          dispatch({ type: 'SET_LOADING', isLoading: false })
+          if (state.isPlaying) {
+            audio.play().catch(console.error)
+          }
+        })
+
+        hls.on(Hls.Events.ERROR, (_, data) => {
+          if (data.fatal) {
+            console.error('HLS fatal error:', data)
+            // 尝试恢复
+            switch (data.type) {
+              case Hls.ErrorTypes.NETWORK_ERROR:
+                hls.startLoad()
+                break
+              case Hls.ErrorTypes.MEDIA_ERROR:
+                hls.recoverMediaError()
+                break
+              default:
+                // 无法恢复，尝试使用备用 URL
+                if (state.currentSong) {
+                  playFallbackAudio(audio, state.currentSong)
+                  if (state.isPlaying) {
+                    audio.play().catch(console.error)
+                  }
+                }
+                break
+            }
+          }
+        })
+      } else if (audio.canPlayType('application/vnd.apple.mpegurl')) {
+        // Safari 原生支持 HLS
+        audio.src = hlsUrl
+        audio.load()
+        dispatch({ type: 'SET_LOADING', isLoading: false })
+        if (state.isPlaying) {
+          audio.play().catch(console.error)
+        }
+      } else {
+        // 不支持 HLS，使用备用
+        playFallbackAudio(audio, state.currentSong)
+        dispatch({ type: 'SET_LOADING', isLoading: false })
+        if (state.isPlaying) {
+          audio.play().catch(console.error)
+        }
+      }
+    } else {
+      // 使用普通音频 URL
+      playFallbackAudio(audio, state.currentSong)
+      dispatch({ type: 'SET_LOADING', isLoading: false })
+      if (state.isPlaying) {
+        audio.play().catch(console.error)
+      }
+    }
+
+    return () => {
+      if (hlsRef.current) {
+        hlsRef.current.destroy()
+        hlsRef.current = null
+      }
+    }
+  }, [state.currentSong, state.isPlaying])
 
   // 播放控制函数
   const play = useCallback(() => {
@@ -363,14 +461,36 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: 'SET_PLAY_MODE', mode })
   }, [])
 
-  const playSong = useCallback((song: Song, playlist?: Song[], index?: number) => {
+  // 获取歌曲详情（包含 HLS URL）
+  const fetchSongDetails = useCallback(async (songId: string): Promise<Song> => {
+    try {
+      const details = await window.electronAPI.getSongDetails(songId)
+      return details
+    } catch (error) {
+      console.error('Failed to fetch song details:', error)
+      return {}
+    }
+  }, [])
+
+  const playSong = useCallback(async (song: Song, playlist?: Song[], index?: number) => {
     const newPlaylist = playlist || [song]
     const newIndex = index ?? 0
+
+    // 如果歌曲没有音频源，先获取详情
+    let fullSong = song
+    if (!song.hls && !song.audioUrl && !song.absolutePath && song.id) {
+      dispatch({ type: 'SET_LOADING', isLoading: true })
+      const details = await fetchSongDetails(song.id)
+      fullSong = { ...song, ...details }
+    }
+
     dispatch({ type: 'SET_PLAYLIST', playlist: newPlaylist, index: newIndex })
-    dispatch({ type: 'SET_SONG', song, index: newIndex })
+    dispatch({ type: 'SET_SONG', song: fullSong, index: newIndex })
+    dispatch({ type: 'SET_LOADING', isLoading: true })
+
     // 自动开始播放
     setTimeout(() => play(), 100)
-  }, [play])
+  }, [play, fetchSongDetails])
 
   const playPlaylist = useCallback((playlist: Song[], startIndex = 0) => {
     const song = playlist[startIndex]
@@ -403,7 +523,6 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
 
   const value: PlayerContextType = {
     state,
-    audioRef,
     play,
     pause,
     togglePlay,
