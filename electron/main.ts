@@ -31,14 +31,18 @@ process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, 
 let win: BrowserWindow | null
 
 function createWindow() {
+  const isMac = process.platform === 'darwin'
+
   win = new BrowserWindow({
     width: 1200,
     height: 800,
     minWidth: 800,
     minHeight: 600,
     frame: false, // 无边框窗口
-    transparent: false,
+    transparent: false, // 不透明
     hasShadow: true,
+    // macOS: 设置红绿灯按钮位置（隐藏，因为我们有自定义标题栏）
+    trafficLightPosition: isMac ? { x: -24, y: 12 } : undefined,
     icon: path.join(process.env.VITE_PUBLIC, 'electron-vite.svg'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.mjs'),
@@ -46,6 +50,10 @@ function createWindow() {
       contextIsolation: true,
     },
   })
+
+  // Windows 11: 无边框窗口默认会有系统圆角（如果系统设置启用）
+  // macOS: 系统自动处理窗口样式
+  // Linux: 通常由窗口管理器决定，无法通过代码控制
 
   // Test active push message to Renderer-process.
   win.webContents.on('did-finish-load', () => {

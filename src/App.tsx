@@ -164,7 +164,7 @@ function AppContent() {
           }}
         >
           <Flex vertical style={{ height: '100%' }}>
-            <TitleBar baseTheme={baseTheme} />
+            <TitleBar baseTheme={baseTheme} accentColor={accentColor} />
 
             <Flex flex={1} style={{ overflow: 'hidden' }}>
               <Flex vertical>

@@ -1,14 +1,15 @@
 import { Flex, Button, Typography } from 'antd'
-import { MinusOutlined, BorderOutlined, CloseOutlined } from '@ant-design/icons'
+import { MinusOutlined, BorderOutlined, CloseOutlined, SoundOutlined } from '@ant-design/icons'
 import { useI18n } from '../i18n'
 
 const { Text } = Typography
 
 interface TitleBarProps {
   baseTheme: 'light' | 'dark'
+  accentColor: string
 }
 
-export function TitleBar({ baseTheme }: TitleBarProps) {
+export function TitleBar({ baseTheme, accentColor }: TitleBarProps) {
   const { t } = useI18n()
 
   const isDark = baseTheme === 'dark'
@@ -60,8 +61,8 @@ export function TitleBar({ baseTheme }: TitleBarProps) {
   }
 
   const buttonStyle: React.CSSProperties = {
-    width: 40,
-    height: 32,
+    width: 46,
+    height: 40,
     border: 'none',
     borderRadius: 0,
     color: isDark ? 'rgba(255,255,255,0.65)' : 'rgba(0,0,0,0.65)',
@@ -79,10 +80,6 @@ export function TitleBar({ baseTheme }: TitleBarProps) {
         .title-bar-button:hover {
           background-color: ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'} !important;
         }
-        .title-bar-button.close-button:hover {
-          background-color: #f90e6a !important;
-          color: white !important;
-        }
       `}</style>
       <Flex
         align="center"
@@ -90,8 +87,8 @@ export function TitleBar({ baseTheme }: TitleBarProps) {
         className="title-bar-root"
         style={{
           width: '100%',
-          height: 32,
-          paddingLeft: 16,
+          height: 40,
+          paddingLeft: 12,
           backgroundColor: bgColor,
           borderBottom: `1px solid ${borderColor}`,
           cursor: 'default',
@@ -99,9 +96,24 @@ export function TitleBar({ baseTheme }: TitleBarProps) {
         }}
         onMouseDown={handleMouseDown}
       >
-        <Text style={{ fontSize: 13, fontWeight: 500, color: textColor }}>
-          {t('app.title')}
-        </Text>
+        <Flex align="center" gap={8}>
+          <div
+            style={{
+              width: 24,
+              height: 24,
+              borderRadius: 4,
+              backgroundColor: accentColor,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <SoundOutlined style={{ color: '#000', fontSize: 14 }} />
+          </div>
+          <Text style={{ fontSize: 13, fontWeight: 500, color: textColor }}>
+            {t('app.title')}
+          </Text>
+        </Flex>
 
         <Flex className="title-bar-buttons">
           <Button
@@ -122,14 +134,11 @@ export function TitleBar({ baseTheme }: TitleBarProps) {
           />
           <Button
             type="text"
-            style={{
-              ...buttonStyle,
-              color: '#f90e6a',
-            }}
+            style={buttonStyle}
             icon={<CloseOutlined />}
             onClick={handleClose}
             onMouseDown={handleButtonMouseDown}
-            className="title-bar-button close-button"
+            className="title-bar-button"
           />
         </Flex>
       </Flex>

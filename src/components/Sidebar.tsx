@@ -21,7 +21,6 @@ import {
   MessageOutlined,
   LeftOutlined,
   RightOutlined,
-  SoundOutlined,
 } from '@ant-design/icons'
 
 const { Text } = Typography
@@ -144,36 +143,6 @@ export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(
           overflow: 'hidden',
         }}
       >
-        {/* Logo 区域 */}
-        <Flex
-          align="center"
-          gap={8}
-          style={{
-            padding: sidebarCollapsed ? 8 : 16,
-            borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}`,
-            justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
-          }}
-        >
-          <div
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 6,
-              backgroundColor: accentColor,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <SoundOutlined style={{ color: '#000', fontSize: 20 }} />
-          </div>
-          {!sidebarCollapsed && (
-            <Text style={{ fontSize: 16, fontWeight: 600, color: accentColor }}>
-              {t('app.title')}
-            </Text>
-          )}
-        </Flex>
-
         {/* 菜单区域 */}
         <Flex
           vertical
