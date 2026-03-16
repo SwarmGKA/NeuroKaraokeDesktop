@@ -152,10 +152,7 @@ export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(
             overflowX: 'hidden',
             padding: 8,
             // 隐藏滚动条
-            scrollbarWidth: 'none',
-            msOverflowStyle: 'none',
           }}
-          className="hide-scrollbar"
         >
           {/* 主菜单 */}
           <Flex vertical gap={2}>

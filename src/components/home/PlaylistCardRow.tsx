@@ -257,7 +257,6 @@ export function PlaylistCardRow({
           overflowY: 'hidden',
           paddingBottom: 8,
           cursor: isDragging ? 'grabbing' : 'grab',
-          scrollbarWidth: 'thin',
         }}
       >
         {loading ? (
