@@ -1,7 +1,8 @@
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, ipcMain } from 'electron'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
+import { ApiClient } from './api/client'
 
 const require = createRequire(import.meta.url)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -28,9 +29,18 @@ let win: BrowserWindow | null
 
 function createWindow() {
   win = new BrowserWindow({
+    width: 1200,
+    height: 800,
+    minWidth: 800,
+    minHeight: 600,
+    frame: false, // 无边框窗口
+    transparent: false,
+    hasShadow: true,
     icon: path.join(process.env.VITE_PUBLIC, 'electron-vite.svg'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.mjs'),
+      nodeIntegration: false,
+      contextIsolation: true,
     },
   })
 
@@ -65,4 +75,105 @@ app.on('activate', () => {
   }
 })
 
+// ========== 窗口控制 IPC ==========
+
+ipcMain.on('window-minimize', (event) => {
+  event.sender.getOwnerBrowserWindow()?.minimize()
+})
+
+ipcMain.on('window-maximize', (event) => {
+  const window = event.sender.getOwnerBrowserWindow()
+  if (window) {
+    if (window.isMaximized()) {
+      window.unmaximize()
+    } else {
+      window.maximize()
+    }
+  }
+})
+
+ipcMain.on('window-close', (event) => {
+  event.sender.getOwnerBrowserWindow()?.close()
+})
+
+ipcMain.on('window-start-drag', (event) => {
+  event.sender.getOwnerBrowserWindow()?.startDragging()
+})
+
+// ========== API 调用 IPC ==========
+
+// 播放列表相关
+ipcMain.handle('api:get-playlist', async (_, id: string) => {
+  return ApiClient.getPlaylist(id)
+})
+
+ipcMain.handle('api:get-official-playlists', async (_, startIndex: number, pageSize: number, year: number) => {
+  return ApiClient.getOfficialPlaylists(startIndex, pageSize, year)
+})
+
+ipcMain.handle('api:get-public-playlists', async () => {
+  return ApiClient.getPublicPlaylists()
+})
+
+// 歌曲相关
+ipcMain.handle('api:get-song-lyrics', async (_, songId: string) => {
+  return ApiClient.getSongLyrics(songId)
+})
+
+ipcMain.handle('api:search-songs', async (_, request) => {
+  return ApiClient.searchSongs(request)
+})
+
+ipcMain.handle('api:get-song-details', async (_, songId: string) => {
+  return ApiClient.getSongDetails(songId)
+})
+
+ipcMain.handle('api:get-song-poll', async (_, songId: string) => {
+  return ApiClient.getSongPoll(songId)
+})
+
+// 艺术家相关
+ipcMain.handle('api:get-all-artists', async () => {
+  return ApiClient.getAllArtists()
+})
+
+// 探索相关
+ipcMain.handle('api:get-trending-songs', async (_, days: number) => {
+  return ApiClient.getTrendingSongs(days)
+})
+
+// 电台相关
+ipcMain.handle('api:get-radio-current-state', async () => {
+  return ApiClient.getRadioCurrentState()
+})
+
+ipcMain.handle('api:get-radio-stream-url', () => {
+  return ApiClient.getRadioStreamUrl()
+})
+
+// 统计相关
+ipcMain.handle('api:get-cover-distribution', async () => {
+  return ApiClient.getCoverDistribution()
+})
+
+// ========== 数据存储 IPC ==========
+// 简单的内存存储（实际项目中可以使用 electron-store）
+
+const settingsStore = new Map<string, unknown>()
+
+ipcMain.handle('store:get', async (_, key: string) => {
+  return settingsStore.get(key)
+})
+
+ipcMain.handle('store:set', async (_, key: string, value: unknown) => {
+  settingsStore.set(key, value)
+  return true
+})
+
+ipcMain.handle('store:delete', async (_, key: string) => {
+  settingsStore.delete(key)
+  return true
+})
+
+// 启动应用
 app.whenReady().then(createWindow)

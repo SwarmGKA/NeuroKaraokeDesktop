@@ -1,6 +1,6 @@
-import { ipcRenderer, contextBridge } from 'electron'
+// API 数据模型定义
 
-// 类型定义
+// 播放列表相关
 export interface Playlist {
   id?: string
   name?: string
@@ -25,6 +25,7 @@ export interface SongListDTO {
   title?: string
 }
 
+// 歌曲相关
 export interface Song {
   id?: string
   title?: string
@@ -186,6 +187,7 @@ export interface SongListItem {
   hls?: string
 }
 
+// 艺术家相关
 export interface Artist {
   id?: string
   name?: string
@@ -194,6 +196,7 @@ export interface Artist {
   summary?: string
 }
 
+// 电台相关
 export interface RadioState {
   current?: RadioSong
   upcoming?: RadioSong[]
@@ -216,6 +219,7 @@ export interface RadioCoverArt {
   credit?: string
 }
 
+// 探索相关
 export interface TrendingSong {
   title?: string
   original_artists?: string[]
@@ -231,6 +235,7 @@ export interface TrendingCoverArt {
   credit?: string
 }
 
+// 统计相关
 export interface CoverDistribution {
   total_songs?: number
   neuro_count?: number
@@ -238,50 +243,3 @@ export interface CoverDistribution {
   duet_count?: number
   other_count?: number
 }
-
-// 暴露 API 到渲染进程
-contextBridge.exposeInMainWorld('electronAPI', {
-  // 窗口控制
-  minimizeWindow: () => ipcRenderer.send('window-minimize'),
-  maximizeWindow: () => ipcRenderer.send('window-maximize'),
-  closeWindow: () => ipcRenderer.send('window-close'),
-  startDragging: () => ipcRenderer.send('window-start-drag'),
-
-  // 播放列表 API
-  getPlaylist: (id: string) => ipcRenderer.invoke('api:get-playlist', id),
-  getOfficialPlaylists: (startIndex: number, pageSize: number, year: number) =>
-    ipcRenderer.invoke('api:get-official-playlists', startIndex, pageSize, year),
-  getPublicPlaylists: () => ipcRenderer.invoke('api:get-public-playlists'),
-
-  // 歌曲 API
-  getSongLyrics: (songId: string) => ipcRenderer.invoke('api:get-song-lyrics', songId),
-  searchSongs: (request: SongSearchRequest) => ipcRenderer.invoke('api:search-songs', request),
-  getSongDetails: (songId: string) => ipcRenderer.invoke('api:get-song-details', songId),
-  getSongPoll: (songId: string) => ipcRenderer.invoke('api:get-song-poll', songId),
-
-  // 艺术家 API
-  getAllArtists: () => ipcRenderer.invoke('api:get-all-artists'),
-
-  // 探索 API
-  getTrendingSongs: (days: number) => ipcRenderer.invoke('api:get-trending-songs', days),
-
-  // 电台 API
-  getRadioCurrentState: () => ipcRenderer.invoke('api:get-radio-current-state'),
-  getRadioStreamUrl: () => ipcRenderer.invoke('api:get-radio-stream-url'),
-
-  // 统计 API
-  getCoverDistribution: () => ipcRenderer.invoke('api:get-cover-distribution'),
-
-  // 数据存储
-  storeGet: (key: string) => ipcRenderer.invoke('store:get', key),
-  storeSet: (key: string, value: unknown) => ipcRenderer.invoke('store:set', key, value),
-  storeDelete: (key: string) => ipcRenderer.invoke('store:delete', key),
-
-  // IPC 事件监听
-  on: (channel: string, callback: (...args: unknown[]) => void) => {
-    ipcRenderer.on(channel, (_event, ...args) => callback(...args))
-  },
-  removeListener: (channel: string, callback: (...args: unknown[]) => void) => {
-    ipcRenderer.removeListener(channel, callback as Parameters<typeof ipcRenderer.removeListener>[1])
-  },
-})
