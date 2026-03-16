@@ -1,5 +1,6 @@
 import { Flex, Avatar, Button, Typography } from 'antd'
 import { SettingOutlined } from '@ant-design/icons'
+import { useI18n } from '../i18n'
 
 const { Text } = Typography
 
@@ -17,6 +18,7 @@ export function UserPanel({
   baseTheme,
 }: UserPanelProps) {
   const isDark = baseTheme === 'dark'
+  const { t } = useI18n()
 
   return (
     <Flex
@@ -38,7 +40,7 @@ export function UserPanel({
             fontWeight: 600,
           }}
         >
-          U
+          {t('user.guestName').charAt(0)}
         </Avatar>
         <Text
           style={{
@@ -47,7 +49,7 @@ export function UserPanel({
             color: isDark ? '#ffffff' : '#1a1a1a',
           }}
         >
-          Guest
+          {t('user.guestName')}
         </Text>
       </Flex>
 

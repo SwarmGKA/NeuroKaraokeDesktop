@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain, WebContents } from 'electron'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
+import fs from 'node:fs'
 import { ApiClient } from './api/client'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -172,6 +173,32 @@ ipcMain.handle('api:get-cover-distribution', async () => {
 // 简单的内存存储（实际项目中可以使用 electron-store）
 
 const settingsStore = new Map<string, unknown>()
+
+// ========== i18n 文件读取 IPC ==========
+ipcMain.handle('i18n:load-translations', async (_, lang: string) => {
+  try {
+    // 开发环境从 public 目录读取，生产环境从 resources 目录读取
+    const fileName = lang === 'zh' ? 'zh-CN.properties' : 'en-US.properties'
+    const devPath = path.join(process.env.APP_ROOT, 'public', 'i18n', fileName)
+
+    // 生产环境路径：i18n 文件会被打包到 resources/i18n 目录
+    const prodPath = path.join(process.resourcesPath, 'i18n', fileName)
+
+    let filePath = devPath
+    if (!VITE_DEV_SERVER_URL && fs.existsSync(prodPath)) {
+      filePath = prodPath
+    }
+
+    if (fs.existsSync(filePath)) {
+      const content = fs.readFileSync(filePath, 'utf-8')
+      return { success: true, content }
+    }
+
+    return { success: false, error: `Translation file not found: ${filePath}` }
+  } catch (error) {
+    return { success: false, error: String(error) }
+  }
+})
 
 ipcMain.handle('store:get', async (_, key: string) => {
   return settingsStore.get(key)

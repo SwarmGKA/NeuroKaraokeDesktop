@@ -12,7 +12,7 @@ export function Uploaded() {
         <Title level={3} style={{ marginBottom: 8 }}>
           {t('page.uploaded')}
         </Title>
-        <Text type="secondary">你上传的歌曲</Text>
+        <Text type="secondary">{t('uploaded.subtitle')}</Text>
       </div>
 
       <Card
@@ -21,7 +21,7 @@ export function Uploaded() {
           border: '1px solid rgba(255,255,255,0.12)',
         }}
       >
-        <Text type="secondary">已上传内容</Text>
+        <Text type="secondary">{t('uploaded.content')}</Text>
       </Card>
     </Flex>
   )

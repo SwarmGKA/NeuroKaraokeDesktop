@@ -5,14 +5,46 @@ export type Language = 'zh' | 'en'
 interface I18nContextType {
   language: Language
   setLanguage: (lang: Language) => void
-  t: (key: string) => string
+  t: (key: string, params?: Record<string, string | number>) => string
 }
 
 const I18nContext = createContext<I18nContextType | null>(null)
 
 const STORAGE_KEY = 'language-settings'
 
-// 内置翻译
+// 解析 .properties 文件内容
+function parseProperties(content: string): Record<string, string> {
+  const result: Record<string, string> = {}
+  const lines = content.split('\n')
+
+  for (const line of lines) {
+    // 跳过注释和空行
+    const trimmed = line.trim()
+    if (!trimmed || trimmed.startsWith('#') || trimmed.startsWith('!')) {
+      continue
+    }
+
+    // 解析 key=value
+    const separatorIndex = trimmed.indexOf('=')
+    if (separatorIndex > 0) {
+      const key = trimmed.substring(0, separatorIndex).trim()
+      let value = trimmed.substring(separatorIndex + 1).trim()
+
+      // 处理转义字符
+      value = value
+        .replace(/\\n/g, '\n')
+        .replace(/\\t/g, '\t')
+        .replace(/\\r/g, '\r')
+        .replace(/\\\\/g, '\\')
+
+      result[key] = value
+    }
+  }
+
+  return result
+}
+
+// 备用翻译（当文件加载失败时使用）
 const fallbackTranslations: Record<Language, Record<string, string>> = {
   zh: {
     'app.title': 'Neuro Karaoke',
@@ -36,23 +68,6 @@ const fallbackTranslations: Record<Language, Record<string, string>> = {
     'sidebar.audioClips': '音频片段',
     'sidebar.communityCanvas': '社区画布',
     'sidebar.quotes': 'Neuro与Evil语录',
-    'page.home': '首页',
-    'page.search': '搜索',
-    'page.random': '随机歌曲',
-    'page.explore': '探索',
-    'page.karaokePlaylist': '卡拉OK歌单',
-    'page.karaokeQuiz': '卡拉OK问答',
-    'page.listenTogether': '一起听',
-    'page.about': '关于',
-    'page.favorites': '我的收藏',
-    'page.downloads': '下载',
-    'page.playlists': '我的播放列表',
-    'page.uploaded': '已上传的歌曲',
-    'page.artGallery': '艺术画廊',
-    'page.videoLibrary': '视频库',
-    'page.audioClips': '音频片段',
-    'page.communityCanvas': '社区画布',
-    'page.quotes': 'Neuro与Evil语录',
     'page.settings': '设置',
     'settings.title': '设置',
     'settings.appearance': '自定义应用程序的外观',
@@ -75,8 +90,11 @@ const fallbackTranslations: Record<Language, Record<string, string>> = {
     'userCard.stats.favorites': '收藏数量',
     'userCard.stats.downloads': '下载次数',
     'userCard.close': '关闭',
-    // 主页
     'home.welcome': '欢迎回来',
+    'home.greeting.lateNight': '夜深了',
+    'home.greeting.morning': '早上好',
+    'home.greeting.afternoon': '下午好',
+    'home.greeting.evening': '晚上好',
     'home.dailyRecommend': '每日推荐',
     'home.radio': '电台',
     'home.nowPlaying': '正在播放',
@@ -92,6 +110,23 @@ const fallbackTranslations: Record<Language, Record<string, string>> = {
     'home.searchPlaceholder': '搜索歌曲、艺人...',
     'home.radioOffline': '电台离线中',
     'home.radioOfflineDesc': '暂时没有播放内容',
+    'search.subtitle': '搜索歌曲、艺术家',
+    'search.content': '搜索内容',
+    'random.subtitle': '随机发现新歌曲',
+    'random.content': '随机歌曲内容',
+    'explore.subtitle': '探索热门歌曲和新内容',
+    'explore.content': '探索内容',
+    'about.subtitle': '关于 Neuro Karaoke',
+    'about.appName': 'Neuro Karaoke Desktop',
+    'about.version': '版本',
+    'about.techStack': '使用 Electron + React + Ant Design 构建',
+    'playlist.defaultName': '未命名歌单',
+    'playlist.songCount': '{0} 首歌曲',
+    'playlist.coverAlt': '歌单封面',
+    'song.defaultTitle': '未知歌曲',
+    'song.unknownArtist': '未知艺术家',
+    'song.coverAlt': '歌曲封面',
+    'user.guestName': '访客',
   },
   en: {
     'app.title': 'Neuro Karaoke',
@@ -115,23 +150,6 @@ const fallbackTranslations: Record<Language, Record<string, string>> = {
     'sidebar.audioClips': 'Audio Clips',
     'sidebar.communityCanvas': 'Community Canvas',
     'sidebar.quotes': 'Quotes',
-    'page.home': 'Home',
-    'page.search': 'Search',
-    'page.random': 'Random',
-    'page.explore': 'Explore',
-    'page.karaokePlaylist': 'Karaoke Playlist',
-    'page.karaokeQuiz': 'Karaoke Quiz',
-    'page.listenTogether': 'Listen Together',
-    'page.about': 'About',
-    'page.favorites': 'Favorites',
-    'page.downloads': 'Downloads',
-    'page.playlists': 'Playlists',
-    'page.uploaded': 'Uploaded',
-    'page.artGallery': 'Art Gallery',
-    'page.videoLibrary': 'Video Library',
-    'page.audioClips': 'Audio Clips',
-    'page.communityCanvas': 'Community Canvas',
-    'page.quotes': 'Quotes',
     'page.settings': 'Settings',
     'settings.title': 'Settings',
     'settings.appearance': 'Customize the appearance of the app',
@@ -154,8 +172,11 @@ const fallbackTranslations: Record<Language, Record<string, string>> = {
     'userCard.stats.favorites': 'Favorites',
     'userCard.stats.downloads': 'Downloads',
     'userCard.close': 'Close',
-    // Home page
     'home.welcome': 'Welcome Back',
+    'home.greeting.lateNight': 'Good Night',
+    'home.greeting.morning': 'Good Morning',
+    'home.greeting.afternoon': 'Good Afternoon',
+    'home.greeting.evening': 'Good Evening',
     'home.dailyRecommend': 'Daily Recommendations',
     'home.radio': 'Radio',
     'home.nowPlaying': 'Now Playing',
@@ -171,6 +192,23 @@ const fallbackTranslations: Record<Language, Record<string, string>> = {
     'home.searchPlaceholder': 'Search songs, artists...',
     'home.radioOffline': 'Radio Offline',
     'home.radioOfflineDesc': 'No content playing right now',
+    'search.subtitle': 'Search songs, artists',
+    'search.content': 'Search content',
+    'random.subtitle': 'Discover new songs randomly',
+    'random.content': 'Random content',
+    'explore.subtitle': 'Explore trending songs and new content',
+    'explore.content': 'Explore content',
+    'about.subtitle': 'About Neuro Karaoke',
+    'about.appName': 'Neuro Karaoke Desktop',
+    'about.version': 'Version',
+    'about.techStack': 'Built with Electron + React + Ant Design',
+    'playlist.defaultName': 'Untitled Playlist',
+    'playlist.songCount': '{0} songs',
+    'playlist.coverAlt': 'Playlist cover',
+    'song.defaultTitle': 'Unknown Song',
+    'song.unknownArtist': 'Unknown Artist',
+    'song.coverAlt': 'Song cover',
+    'user.guestName': 'Guest',
   },
 }
 
@@ -178,6 +216,23 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguageState] = useState<Language>('zh')
   const [translations, setTranslations] = useState<Record<string, string>>(fallbackTranslations['zh'])
   const [isLoading, setIsLoading] = useState(true)
+
+  // 加载翻译文件
+  const loadTranslations = useCallback(async (lang: Language) => {
+    try {
+      const result = await window.electronAPI.loadTranslations(lang)
+      if (result.success && result.content) {
+        const parsed = parseProperties(result.content)
+        if (Object.keys(parsed).length > 0) {
+          return parsed
+        }
+      }
+      console.warn('Failed to load translations, using fallback:', result.error)
+    } catch (error) {
+      console.error('Failed to load translations:', error)
+    }
+    return fallbackTranslations[lang]
+  }, [])
 
   // 初始化
   useEffect(() => {
@@ -189,8 +244,9 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
         const lang = (savedLang as Language) || 'zh'
 
         if (mounted) {
+          const loadedTranslations = await loadTranslations(lang)
           setLanguageState(lang)
-          setTranslations(fallbackTranslations[lang])
+          setTranslations(loadedTranslations)
         }
       } catch (error) {
         console.error('Failed to init i18n:', error)
@@ -201,22 +257,36 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
 
     init()
     return () => { mounted = false }
-  }, [])
+  }, [loadTranslations])
 
   // 切换语言
   const setLanguage = useCallback(async (lang: Language) => {
     if (lang === language) return
-    setTranslations(fallbackTranslations[lang])
+
+    const loadedTranslations = await loadTranslations(lang)
+    setTranslations(loadedTranslations)
     setLanguageState(lang)
+
     try {
       await window.electronAPI.storeSet(STORAGE_KEY, lang)
     } catch (error) {
       console.error('Failed to save language:', error)
     }
-  }, [language])
+  }, [language, loadTranslations])
 
-  // 翻译函数
-  const t = useCallback((key: string): string => translations[key] || key, [translations])
+  // 翻译函数，支持参数替换
+  const t = useCallback((key: string, params?: Record<string, string | number>): string => {
+    let text = translations[key] || fallbackTranslations[language]?.[key] || key
+
+    // 支持参数替换 {0}, {1}, ... 或 {paramName}
+    if (params) {
+      Object.entries(params).forEach(([paramKey, paramValue]) => {
+        text = text.replace(new RegExp(`\\{${paramKey}\\}`, 'g'), String(paramValue))
+      })
+    }
+
+    return text
+  }, [translations, language])
 
   if (isLoading) return null
 

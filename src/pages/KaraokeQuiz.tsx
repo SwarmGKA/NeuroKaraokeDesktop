@@ -12,7 +12,7 @@ export function KaraokeQuiz() {
         <Title level={3} style={{ marginBottom: 8 }}>
           {t('page.karaokeQuiz')}
         </Title>
-        <Text type="secondary">测试你的音乐知识</Text>
+        <Text type="secondary">{t('karaokeQuiz.subtitle')}</Text>
       </div>
 
       <Card
@@ -21,7 +21,7 @@ export function KaraokeQuiz() {
           border: '1px solid rgba(255,255,255,0.12)',
         }}
       >
-        <Text type="secondary">卡拉OK问答内容</Text>
+        <Text type="secondary">{t('karaokeQuiz.content')}</Text>
       </Card>
     </Flex>
   )

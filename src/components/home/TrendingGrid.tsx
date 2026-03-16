@@ -17,17 +17,23 @@ interface TrendingGridProps {
 function TrendingSongCard({
   song,
   index,
-  hotBadgeText
+  hotBadgeText,
+  unknownArtistText,
+  coverAltText,
+  defaultTitleText
 }: {
   song: TrendingSong
   index: number
   hotBadgeText: string
+  unknownArtistText: string
+  coverAltText: string
+  defaultTitleText: string
 }) {
   const coverUrl = song.coverArt?.cloudflareId
     ? getThumbnailUrl(song.coverArt.cloudflareId)
     : undefined
 
-  const artists = song.coverArtists?.join(', ') || song.originalArtists?.join(', ') || '未知艺术家'
+  const artists = song.coverArtists?.join(', ') || song.originalArtists?.join(', ') || unknownArtistText
 
   return (
     <motion.div
@@ -61,7 +67,7 @@ function TrendingSongCard({
             {coverUrl ? (
               <img
                 src={coverUrl}
-                alt={song.title || '歌曲封面'}
+                alt={song.title || coverAltText}
                 loading="lazy"
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               />
@@ -87,7 +93,7 @@ function TrendingSongCard({
               ellipsis
               style={{ fontWeight: 500, fontSize: 14 }}
             >
-              {song.title || '未知歌曲'}
+              {song.title || defaultTitleText}
             </Text>
             <Text
               ellipsis
@@ -135,6 +141,9 @@ export function TrendingGrid({ songs, loading, error }: TrendingGridProps) {
   // 显示前12首歌曲，分两列
   const displaySongs = songs.slice(0, 12)
   const hotBadgeText = t('home.hotBadge')
+  const unknownArtistText = t('song.unknownArtist')
+  const coverAltText = t('song.coverAlt')
+  const defaultTitleText = t('song.defaultTitle')
 
   return (
     <div style={{ marginBottom: 32 }}>
@@ -167,6 +176,9 @@ export function TrendingGrid({ songs, loading, error }: TrendingGridProps) {
               song={song}
               index={index}
               hotBadgeText={hotBadgeText}
+              unknownArtistText={unknownArtistText}
+              coverAltText={coverAltText}
+              defaultTitleText={defaultTitleText}
             />
           ))
         )}

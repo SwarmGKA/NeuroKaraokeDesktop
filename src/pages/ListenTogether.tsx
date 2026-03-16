@@ -12,7 +12,7 @@ export function ListenTogether() {
         <Title level={3} style={{ marginBottom: 8 }}>
           {t('page.listenTogether')}
         </Title>
-        <Text type="secondary">与朋友一起听歌</Text>
+        <Text type="secondary">{t('listenTogether.subtitle')}</Text>
       </div>
 
       <Card
@@ -21,7 +21,7 @@ export function ListenTogether() {
           border: '1px solid rgba(255,255,255,0.12)',
         }}
       >
-        <Text type="secondary">一起听内容</Text>
+        <Text type="secondary">{t('listenTogether.content')}</Text>
       </Card>
     </Flex>
   )

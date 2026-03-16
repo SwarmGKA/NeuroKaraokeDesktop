@@ -12,7 +12,7 @@ export function AudioClips() {
         <Title level={3} style={{ marginBottom: 8 }}>
           {t('page.audioClips')}
         </Title>
-        <Text type="secondary">音频片段收藏</Text>
+        <Text type="secondary">{t('audioClips.subtitle')}</Text>
       </div>
 
       <Card
@@ -21,7 +21,7 @@ export function AudioClips() {
           border: '1px solid rgba(255,255,255,0.12)',
         }}
       >
-        <Text type="secondary">音频片段内容</Text>
+        <Text type="secondary">{t('audioClips.content')}</Text>
       </Card>
     </Flex>
   )

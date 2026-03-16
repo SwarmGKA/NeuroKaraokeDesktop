@@ -12,7 +12,7 @@ export function KaraokePlaylist() {
         <Title level={3} style={{ marginBottom: 8 }}>
           {t('page.karaokePlaylist')}
         </Title>
-        <Text type="secondary">管理和创建卡拉OK歌单</Text>
+        <Text type="secondary">{t('karaokePlaylist.subtitle')}</Text>
       </div>
 
       <Card
@@ -21,7 +21,7 @@ export function KaraokePlaylist() {
           border: '1px solid rgba(255,255,255,0.12)',
         }}
       >
-        <Text type="secondary">卡拉OK歌单内容</Text>
+        <Text type="secondary">{t('karaokePlaylist.content')}</Text>
       </Card>
     </Flex>
   )

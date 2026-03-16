@@ -12,7 +12,7 @@ export function Playlists() {
         <Title level={3} style={{ marginBottom: 8 }}>
           {t('page.playlists')}
         </Title>
-        <Text type="secondary">你的播放列表</Text>
+        <Text type="secondary">{t('playlists.subtitle')}</Text>
       </div>
 
       <Card
@@ -21,7 +21,7 @@ export function Playlists() {
           border: '1px solid rgba(255,255,255,0.12)',
         }}
       >
-        <Text type="secondary">播放列表内容</Text>
+        <Text type="secondary">{t('playlists.content')}</Text>
       </Card>
     </Flex>
   )

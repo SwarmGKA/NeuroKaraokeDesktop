@@ -12,7 +12,7 @@ export function Random() {
         <Title level={3} style={{ marginBottom: 8 }}>
           {t('page.random')}
         </Title>
-        <Text type="secondary">随机发现新歌曲</Text>
+        <Text type="secondary">{t('random.subtitle')}</Text>
       </div>
 
       <Card
@@ -21,7 +21,7 @@ export function Random() {
           border: '1px solid rgba(255,255,255,0.12)',
         }}
       >
-        <Text type="secondary">随机歌曲内容</Text>
+        <Text type="secondary">{t('random.content')}</Text>
       </Card>
     </Flex>
   )

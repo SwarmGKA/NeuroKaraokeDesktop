@@ -20,7 +20,15 @@ interface PlaylistCardRowProps {
 }
 
 // 歌单卡片
-function PlaylistCard({ playlist, index }: { playlist: Playlist; index: number }) {
+function PlaylistCard({
+  playlist,
+  index,
+  t
+}: {
+  playlist: Playlist
+  index: number
+  t: (key: string, params?: Record<string, string | number>) => string
+}) {
   const coverUrl = playlist.mosaicMedia?.[0]?.cloudflareId
     ? getThumbnailUrl(playlist.mosaicMedia[0].cloudflareId)
     : playlist.media?.cloudflareId
@@ -42,7 +50,7 @@ function PlaylistCard({ playlist, index }: { playlist: Playlist; index: number }
             {coverUrl ? (
               <img
                 src={coverUrl}
-                alt={playlist.name || '歌单封面'}
+                alt={playlist.name || t('playlist.coverAlt')}
                 loading="lazy"
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               />
@@ -64,10 +72,12 @@ function PlaylistCard({ playlist, index }: { playlist: Playlist; index: number }
         }
       >
         <Text ellipsis style={{ fontSize: 13, fontWeight: 500 }}>
-          {playlist.name || '未命名歌单'}
+          {playlist.name || t('playlist.defaultName')}
         </Text>
         {playlist.songCount !== undefined && (
-          <Text type="secondary" style={{ fontSize: 12 }}>{playlist.songCount} 首歌曲</Text>
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            {t('playlist.songCount', { '0': playlist.songCount })}
+          </Text>
         )}
       </Card>
     </motion.div>
@@ -84,9 +94,20 @@ interface FeatureCardProps {
   listenerCount?: number
   onClick?: () => void
   loading?: boolean
+  listenersText: string
 }
 
-function FeatureCard({ icon, title, subtitle, gradient, live, listenerCount, onClick, loading }: FeatureCardProps) {
+function FeatureCard({
+  icon,
+  title,
+  subtitle,
+  gradient,
+  live,
+  listenerCount,
+  onClick,
+  loading,
+  listenersText
+}: FeatureCardProps) {
   if (loading) {
     return (
       <Card
@@ -156,7 +177,7 @@ function FeatureCard({ icon, title, subtitle, gradient, live, listenerCount, onC
             <Flex align="center" gap={4}>
               <EyeOutlined style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12 }} />
               <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12 }}>
-                {listenerCount} 听众
+                {listenerCount} {listenersText}
               </Text>
             </Flex>
           ) : subtitle ? (
@@ -269,6 +290,7 @@ export function PlaylistCardRow({
                 key={playlist.id || index}
                 playlist={playlist}
                 index={index}
+                t={t}
               />
             ))}
 
@@ -282,6 +304,7 @@ export function PlaylistCardRow({
               listenerCount={!isRadioOffline ? radioState?.listenerCount : undefined}
               onClick={onRadioClick}
               loading={radioLoading}
+              listenersText={t('home.listeners')}
             />
 
             {/* 音乐挑战卡片 */}
@@ -291,6 +314,7 @@ export function PlaylistCardRow({
               subtitle={t('home.karaokeQuizDesc')}
               gradient="linear-gradient(135deg, #f093fb 0%, #f5576c 100%)"
               onClick={onKaraokeQuizClick}
+              listenersText={t('home.listeners')}
             />
 
             {/* 一起听卡片 */}
@@ -300,6 +324,7 @@ export function PlaylistCardRow({
               subtitle={t('home.listenTogetherDesc')}
               gradient="linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)"
               onClick={onListenTogetherClick}
+              listenersText={t('home.listeners')}
             />
           </>
         )}

@@ -22,10 +22,10 @@ export function Home() {
   // 获取当前时间问候语
   const getGreeting = () => {
     const hour = new Date().getHours()
-    if (hour < 6) return '夜深了'
-    if (hour < 12) return '早上好'
-    if (hour < 18) return '下午好'
-    return '晚上好'
+    if (hour < 6) return t('home.greeting.lateNight')
+    if (hour < 12) return t('home.greeting.morning')
+    if (hour < 18) return t('home.greeting.afternoon')
+    return t('home.greeting.evening')
   }
 
   return (

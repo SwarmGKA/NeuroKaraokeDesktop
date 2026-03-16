@@ -12,7 +12,7 @@ export function Quotes() {
         <Title level={3} style={{ marginBottom: 8 }}>
           {t('page.quotes')}
         </Title>
-        <Text type="secondary">Neuro 与 Evil 的经典语录</Text>
+        <Text type="secondary">{t('quotes.subtitle')}</Text>
       </div>
 
       <Card
@@ -21,7 +21,7 @@ export function Quotes() {
           border: '1px solid rgba(255,255,255,0.12)',
         }}
       >
-        <Text type="secondary">语录内容</Text>
+        <Text type="secondary">{t('quotes.content')}</Text>
       </Card>
     </Flex>
   )

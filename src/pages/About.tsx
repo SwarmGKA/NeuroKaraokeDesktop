@@ -12,7 +12,7 @@ export function About() {
         <Title level={3} style={{ marginBottom: 8 }}>
           {t('page.about')}
         </Title>
-        <Text type="secondary">关于 Neuro Karaoke</Text>
+        <Text type="secondary">{t('about.subtitle')}</Text>
       </div>
 
       <Card
@@ -22,9 +22,9 @@ export function About() {
         }}
       >
         <Flex vertical gap={16}>
-          <Text>Neuro Karaoke Desktop</Text>
-          <Text type="secondary">版本: 1.0.0</Text>
-          <Text type="secondary">使用 Electron + React + Ant Design 构建</Text>
+          <Text>{t('about.appName')}</Text>
+          <Text type="secondary">{t('about.version')}: 1.0.0</Text>
+          <Text type="secondary">{t('about.techStack')}</Text>
         </Flex>
       </Card>
     </Flex>

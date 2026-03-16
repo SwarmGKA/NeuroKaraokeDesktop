@@ -11,6 +11,14 @@
     "dist",
     "dist-electron"
   ],
+  // 额外资源：i18n 文件会被打包到 resources/i18n 目录
+  "extraResources": [
+    {
+      "from": "public/i18n",
+      "to": "i18n",
+      "filter": ["**/*.properties"]
+    }
+  ],
   "mac": {
     "target": [
       "dmg"

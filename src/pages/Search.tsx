@@ -12,7 +12,7 @@ export function Search() {
         <Title level={3} style={{ marginBottom: 8 }}>
           {t('page.search')}
         </Title>
-        <Text type="secondary">搜索歌曲、艺术家</Text>
+        <Text type="secondary">{t('search.subtitle')}</Text>
       </div>
 
       <Card
@@ -21,7 +21,7 @@ export function Search() {
           border: '1px solid rgba(255,255,255,0.12)',
         }}
       >
-        <Text type="secondary">搜索内容</Text>
+        <Text type="secondary">{t('search.content')}</Text>
       </Card>
     </Flex>
   )

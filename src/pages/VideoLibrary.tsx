@@ -12,7 +12,7 @@ export function VideoLibrary() {
         <Title level={3} style={{ marginBottom: 8 }}>
           {t('page.videoLibrary')}
         </Title>
-        <Text type="secondary">浏览视频库</Text>
+        <Text type="secondary">{t('videoLibrary.subtitle')}</Text>
       </div>
 
       <Card
@@ -21,7 +21,7 @@ export function VideoLibrary() {
           border: '1px solid rgba(255,255,255,0.12)',
         }}
       >
-        <Text type="secondary">视频库内容</Text>
+        <Text type="secondary">{t('videoLibrary.content')}</Text>
       </Card>
     </Flex>
   )

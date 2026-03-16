@@ -71,11 +71,11 @@ export function UserCardDialog({
               fontWeight: 600,
             }}
           >
-            U
+            {t('user.guestName').charAt(0)}
           </Avatar>
           <Flex vertical>
             <Title level={4} style={{ margin: 0, color: isDark ? '#ffffff' : '#1a1a1a' }}>
-              Guest
+              {t('user.guestName')}
             </Title>
             <Text type="secondary">{t('userCard.guestUser')}</Text>
           </Flex>

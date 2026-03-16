@@ -36,6 +36,9 @@ export interface ElectronAPI {
   storeSet: (key: string, value: unknown) => Promise<boolean>
   storeDelete: (key: string) => Promise<boolean>
 
+  // i18n 加载
+  loadTranslations: (lang: string) => Promise<{ success: boolean; content?: string; error?: string }>
+
   // IPC 事件监听
   on: (channel: string, callback: (...args: unknown[]) => void) => void
   removeListener: (channel: string, callback: (...args: unknown[]) => void) => void

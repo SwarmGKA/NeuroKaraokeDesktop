@@ -12,7 +12,7 @@ export function Favorites() {
         <Title level={3} style={{ marginBottom: 8 }}>
           {t('page.favorites')}
         </Title>
-        <Text type="secondary">你收藏的歌曲</Text>
+        <Text type="secondary">{t('favorites.subtitle')}</Text>
       </div>
 
       <Card
@@ -21,7 +21,7 @@ export function Favorites() {
           border: '1px solid rgba(255,255,255,0.12)',
         }}
       >
-        <Text type="secondary">收藏内容</Text>
+        <Text type="secondary">{t('favorites.content')}</Text>
       </Card>
     </Flex>
   )

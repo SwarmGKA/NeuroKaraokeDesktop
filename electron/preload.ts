@@ -277,6 +277,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   storeSet: (key: string, value: unknown) => ipcRenderer.invoke('store:set', key, value),
   storeDelete: (key: string) => ipcRenderer.invoke('store:delete', key),
 
+  // i18n 加载
+  loadTranslations: (lang: string) => ipcRenderer.invoke('i18n:load-translations', lang),
+
   // IPC 事件监听
   on: (channel: string, callback: (...args: unknown[]) => void) => {
     ipcRenderer.on(channel, (_event, ...args) => callback(...args))

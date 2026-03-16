@@ -12,7 +12,7 @@ export function ArtGallery() {
         <Title level={3} style={{ marginBottom: 8 }}>
           {t('page.artGallery')}
         </Title>
-        <Text type="secondary">浏览专辑封面艺术</Text>
+        <Text type="secondary">{t('artGallery.subtitle')}</Text>
       </div>
 
       <Card
@@ -21,7 +21,7 @@ export function ArtGallery() {
           border: '1px solid rgba(255,255,255,0.12)',
         }}
       >
-        <Text type="secondary">艺术画廊内容</Text>
+        <Text type="secondary">{t('artGallery.content')}</Text>
       </Card>
     </Flex>
   )
