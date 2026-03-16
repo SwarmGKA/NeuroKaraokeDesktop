@@ -1,11 +1,14 @@
-import { app, BrowserWindow, ipcMain } from 'electron'
-import { createRequire } from 'node:module'
+import { app, BrowserWindow, ipcMain, WebContents } from 'electron'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import { ApiClient } from './api/client'
 
-const require = createRequire(import.meta.url)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
+
+// 辅助函数：从 WebContents 获取 BrowserWindow
+function getWindowFromWebContents(contents: WebContents): BrowserWindow | null {
+  return BrowserWindow.fromWebContents(contents)
+}
 
 // The built directory structure
 //
