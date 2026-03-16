@@ -21,10 +21,10 @@ interface PlaylistCardRowProps {
 
 // 歌单卡片
 function PlaylistCard({ playlist, index }: { playlist: Playlist; index: number }) {
-  const coverUrl = playlist.mosaic_media?.[0]?.cloudflare_id
-    ? getThumbnailUrl(playlist.mosaic_media[0].cloudflare_id, 400)
-    : playlist.media?.cloudflare_id
-      ? getThumbnailUrl(playlist.media.cloudflare_id, 400)
+  const coverUrl = playlist.mosaicMedia?.[0]?.cloudflareId
+    ? getThumbnailUrl(playlist.mosaicMedia[0].cloudflareId)
+    : playlist.media?.cloudflareId
+      ? getThumbnailUrl(playlist.media.cloudflareId)
       : undefined
 
   return (
@@ -63,11 +63,11 @@ function PlaylistCard({ playlist, index }: { playlist: Playlist; index: number }
           </div>
         }
       >
-        <Text ellipsis={{ rows: 2 }} style={{ fontSize: 13, fontWeight: 500 }}>
+        <Text ellipsis style={{ fontSize: 13, fontWeight: 500 }}>
           {playlist.name || '未命名歌单'}
         </Text>
-        {playlist.song_count !== undefined && (
-          <Text type="secondary" style={{ fontSize: 12 }}>{playlist.song_count} 首歌曲</Text>
+        {playlist.songCount !== undefined && (
+          <Text type="secondary" style={{ fontSize: 12 }}>{playlist.songCount} 首歌曲</Text>
         )}
       </Card>
     </motion.div>
@@ -280,7 +280,7 @@ export function PlaylistCardRow({
               subtitle={isRadioOffline ? t('home.radioOffline') : undefined}
               gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
               live={!isRadioOffline}
-              listenerCount={!isRadioOffline ? radioState?.listener_count : undefined}
+              listenerCount={!isRadioOffline ? radioState?.listenerCount : undefined}
               onClick={onRadioClick}
               loading={radioLoading}
             />

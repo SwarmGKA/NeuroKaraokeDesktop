@@ -22,13 +22,13 @@ body {
   overflow: hidden;
 }
 
-/* 隐藏滚动条但保持滚动功能 */
-.hide-scrollbar {
+/* 全局隐藏所有滚动条但保持滚动功能 */
+* {
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
 
-.hide-scrollbar::-webkit-scrollbar {
+*::-webkit-scrollbar {
   display: none;
 }
 

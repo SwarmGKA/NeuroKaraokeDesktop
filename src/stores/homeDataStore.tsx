@@ -39,10 +39,11 @@ const HomeDataContext = createContext<HomeDataState | null>(null)
 // 获取当前年份
 const currentYear = new Date().getFullYear()
 
-// Cloudflare CDN 缩略图 URL 生成
-export function getThumbnailUrl(cloudflareId: string | undefined, width = 400): string | undefined {
+// Cloudflare CDN 图片 URL 生成
+// 官方文档: https://images.neurokaraoke.com/{cloudflareId}/public
+export function getThumbnailUrl(cloudflareId: string | undefined): string | undefined {
   if (!cloudflareId) return undefined
-  return `https://imagedelivery.net/${cloudflareId}/w-${width}`
+  return `https://images.neurokaraoke.com/${cloudflareId}/public`
 }
 
 export function HomeDataProvider({ children }: { children: React.ReactNode }) {

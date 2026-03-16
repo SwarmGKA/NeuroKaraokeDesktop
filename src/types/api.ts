@@ -1,76 +1,89 @@
-// API 数据模型定义
+// API 数据模型定义（驼峰命名匹配 API 返回格式）
 
 // 播放列表相关
 export interface Playlist {
   id?: string
   name?: string
   cover?: string
-  song_count?: number
-  set_list_date?: string
+  songCount?: number
+  setListDate?: string
   media?: Media
-  mosaic_media?: Media[]
-  song_list_dtos?: SongListDTO[]
+  mosaicMedia?: Media[]
+  songListDTOs?: SongListDTO[]
   description?: string
-  created_by?: string
+  createdBy?: string
+  totalDuration?: number
+  playCount?: number
+  favoriteCount?: number
+  playlistType?: number
+  createdAt?: string
+  updatedAt?: string
 }
 
 export interface Media {
-  cloudflare_id?: string
-  absolute_path?: string
+  id?: string
+  cloudflareId?: string
+  absolutePath?: string
+  fileName?: string
+  contentType?: string
+  description?: string
+  credit?: string
 }
 
 export interface SongListDTO {
   id?: string
-  absolute_path?: string
+  absolutePath?: string
   title?: string
+  playCount?: number
+  duration?: number
 }
 
 // 歌曲相关
 export interface Song {
   id?: string
   title?: string
-  audio_url?: string
-  absolute_path?: string
+  audioUrl?: string
+  absolutePath?: string
   duration?: number
-  play_count?: number
-  stream_date?: string
-  date_added?: string
-  cover_artists?: SongArtist[]
-  original_artists?: SongArtist[]
+  playCount?: number
+  streamDate?: string
+  dateAdded?: string
+  coverArtists?: SongArtist[]
+  originalArtists?: SongArtist[]
   genres?: SongTag[]
   moods?: SongTag[]
   themes?: SongTag[]
   metadata?: SongMetadata
-  similar_songs?: SongListItem[]
-  cover_art?: CoverArt
+  similarSongs?: SongListItem[]
+  coverArt?: CoverArt
   videos?: Video[]
-  lyrics_dtos?: Lyric[]
+  lyricsDTOs?: Lyric[]
   setlist?: string
-  setlist_id?: string
-  video_id?: string
+  setlistId?: string
+  videoId?: string
   hls?: string
-  has_lyrics?: boolean
-  user_uploaded?: boolean
-  karaoke_date?: string
+  hasLyrics?: boolean
+  userUploaded?: boolean
+  karaokeDate?: string
 }
 
 export interface SongMetadata {
-  tempo_bpm?: number
+  tempoBpm?: number
   genre?: string
   key?: string
-  energy_level?: number
+  energyLevel?: number
   language?: string
   comments?: string
   occasion?: string
   description?: string
   writers?: string
   composers?: string
-  featured_artists?: string
+  featuredArtists?: string
   publishers?: string
-  updated_by?: string
-  updated_date?: string
-  foreign_title?: string
-  english_title?: string
+  updatedBy?: string
+  updatedDate?: string
+  foreignTitle?: string
+  englishTitle?: string
 }
 
 export interface SongArtist {
@@ -81,48 +94,48 @@ export interface SongArtist {
 export interface SongTag {
   id?: string
   name?: string
-  song_count?: number
+  songCount?: number
 }
 
 export interface CoverArt {
   id?: string
-  file_name?: string
-  content_type?: string
+  fileName?: string
+  contentType?: string
   description?: string
   credit?: string
-  cloudflare_id?: string
-  media_storage_type?: number
-  absolute_path?: string
+  cloudflareId?: string
+  mediaStorageType?: number
+  absolutePath?: string
   artist?: CoverArtArtist
   upvotes?: number
-  tag_string?: string
+  tagString?: string
 }
 
 export interface CoverArtArtist {
   id?: string
   name?: string
-  social_link?: string
-  user_id?: string
+  socialLink?: string
+  userId?: string
   arts?: string[]
 }
 
 export interface Video {
   id?: string
-  song_id?: string
-  song_title?: string
+  songId?: string
+  songTitle?: string
   name?: string
   description?: string
-  content_type?: string
-  absolute_path?: string
+  contentType?: string
+  absolutePath?: string
   url?: string
-  video_type?: number
-  cloudflare_id?: string
-  created_by?: string
-  thumbnail_url?: string
+  videoType?: number
+  cloudflareId?: string
+  createdBy?: string
+  thumbnailUrl?: string
   duration?: number
   width?: number
   height?: number
-  created_date?: string
+  createdDate?: string
 }
 
 export interface Lyric {
@@ -132,10 +145,10 @@ export interface Lyric {
 
 export interface SongPoll {
   id?: string
-  song_id?: string
-  song_title?: string
+  songId?: string
+  songTitle?: string
   date?: string
-  total_votes?: number
+  totalVotes?: number
   masterpiece?: number
   amazing?: number
   good?: number
@@ -145,45 +158,45 @@ export interface SongPoll {
 export interface SongSearchRequest {
   search?: string
   page?: number
-  page_size?: number
-  sort_by?: string
-  sort_desc?: boolean
-  genre_ids?: string[]
-  theme_ids?: string[]
-  mood_ids?: string[]
-  artist_ids?: string[]
-  cover_artist_ids?: string[]
-  energy_level?: number
+  pageSize?: number
+  sortBy?: string
+  sortDesc?: boolean
+  genreIds?: string[]
+  themeIds?: string[]
+  moodIds?: string[]
+  artistIds?: string[]
+  coverArtistIds?: string[]
+  energyLevel?: number
   tempo?: number
   key?: string
-  karaoke_start?: string
-  karaoke_end?: string
+  karaokeStart?: string
+  karaokeEnd?: string
 }
 
 export interface SongSearchResponse {
   items?: SongListItem[]
-  total_count?: number
+  totalCount?: number
   page?: number
-  page_size?: number
+  pageSize?: number
 }
 
 export interface SongListItem {
   id?: string
   title?: string
-  absolute_path?: string
-  play_count?: number
+  absolutePath?: string
+  playCount?: number
   duration?: number
-  stream_date?: string
-  date_added?: string
-  cover_artists?: string[]
-  original_artists?: string[]
+  streamDate?: string
+  dateAdded?: string
+  coverArtists?: string[]
+  originalArtists?: string[]
   genres?: SongTag[]
-  cover_art?: CoverArt
-  thumbnail_art?: CoverArt
+  coverArt?: CoverArt
+  thumbnailArt?: CoverArt
   order?: number
-  has_lyrics?: boolean
-  user_uploaded?: boolean
-  video_id?: string
+  hasLyrics?: boolean
+  userUploaded?: boolean
+  videoId?: string
   hls?: string
 }
 
@@ -191,8 +204,8 @@ export interface SongListItem {
 export interface Artist {
   id?: string
   name?: string
-  image_path?: string
-  song_count?: number
+  imagePath?: string
+  songCount?: number
   summary?: string
 }
 
@@ -201,45 +214,54 @@ export interface RadioState {
   current?: RadioSong
   upcoming?: RadioSong[]
   history?: RadioSong[]
-  listener_count?: number
+  listenerCount?: number
   offline?: boolean
 }
 
 export interface RadioSong {
   id?: string
   title?: string
-  original_artists?: string[]
-  cover_artists?: string[]
+  originalArtists?: string[]
+  coverArtists?: string[]
   duration?: number
-  cover_art?: RadioCoverArt
+  coverArt?: RadioCoverArt
 }
 
 export interface RadioCoverArt {
-  cloudflare_id?: string
+  cloudflareId?: string
   credit?: string
 }
 
 // 探索相关
 export interface TrendingSong {
+  id?: string
   title?: string
-  original_artists?: string[]
-  cover_artists?: string[]
-  absolute_path?: string
+  originalArtists?: string[]
+  coverArtists?: string[]
+  absolutePath?: string
   duration?: number
-  cover_art?: TrendingCoverArt
+  playCount?: number
+  streamDate?: string
+  dateAdded?: string
+  genres?: SongTag[]
+  coverArt?: TrendingCoverArt
 }
 
 export interface TrendingCoverArt {
-  cloudflare_id?: string
-  absolute_path?: string
+  id?: string
+  cloudflareId?: string
+  absolutePath?: string
   credit?: string
+  fileName?: string
+  contentType?: string
+  description?: string
 }
 
 // 统计相关
 export interface CoverDistribution {
-  total_songs?: number
-  neuro_count?: number
-  evil_count?: number
-  duet_count?: number
-  other_count?: number
+  totalSongs?: number
+  neuroCount?: number
+  evilCount?: number
+  duetCount?: number
+  otherCount?: number
 }

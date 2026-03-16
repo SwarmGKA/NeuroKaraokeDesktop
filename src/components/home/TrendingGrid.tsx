@@ -23,11 +23,11 @@ function TrendingSongCard({
   index: number
   hotBadgeText: string
 }) {
-  const coverUrl = song.cover_art?.cloudflare_id
-    ? getThumbnailUrl(song.cover_art.cloudflare_id, 200)
+  const coverUrl = song.coverArt?.cloudflareId
+    ? getThumbnailUrl(song.coverArt.cloudflareId)
     : undefined
 
-  const artists = song.cover_artists?.join(', ') || song.original_artists?.join(', ') || '未知艺术家'
+  const artists = song.coverArtists?.join(', ') || song.originalArtists?.join(', ') || '未知艺术家'
 
   return (
     <motion.div
@@ -163,7 +163,7 @@ export function TrendingGrid({ songs, loading, error }: TrendingGridProps) {
         ) : (
           displaySongs.map((song, index) => (
             <TrendingSongCard
-              key={`${song.title}-${index}`}
+              key={song.id || `${song.title}-${index}`}
               song={song}
               index={index}
               hotBadgeText={hotBadgeText}

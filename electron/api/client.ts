@@ -4,11 +4,28 @@ export const API_BASE_URL = 'https://api.neurokaraoke.com';
 export const IDK_BASE_URL = 'https://idk.neurokaraoke.com';
 export const RADIO_SOCKET_URL = 'https://socket.neurokaraoke.com';
 export const RADIO_STREAM_URL = 'https://radio.twinskaraoke.com';
+export const IMAGE_CDN_URL = 'https://images.neurokaraoke.com';
+export const STORAGE_URL = 'https://storage.neurokaraoke.com';
 
-interface ApiResponse<T> {
-  data?: T;
-  message?: string;
-  success?: boolean;
+// 图片 URL 生成函数
+export function getImageUrl(cloudflareId: string | undefined, fallbackPath?: string): string | undefined {
+  if (cloudflareId) {
+    return `${IMAGE_CDN_URL}/${cloudflareId}/public`;
+  }
+  if (fallbackPath) {
+    if (fallbackPath.startsWith('http')) {
+      return fallbackPath;
+    }
+    return `${STORAGE_URL}${fallbackPath.startsWith('/') ? '' : '/'}${fallbackPath}`;
+  }
+  return undefined;
+}
+
+// 音频 URL 生成函数
+export function getAudioUrl(absolutePath: string | undefined): string | undefined {
+  if (!absolutePath) return undefined;
+  if (absolutePath.startsWith('http')) return absolutePath;
+  return `${STORAGE_URL}${absolutePath.startsWith('/') ? '' : '/'}${absolutePath}`;
 }
 
 async function handleResponse<T>(response: globalThis.Response): Promise<T> {
@@ -18,13 +35,33 @@ async function handleResponse<T>(response: globalThis.Response): Promise<T> {
   }
 
   const text = await response.text();
-  const apiResponse: ApiResponse<T> = JSON.parse(text);
 
-  if (apiResponse.data !== undefined && apiResponse.data !== null) {
-    return apiResponse.data;
+  // 尝试解析 JSON
+  try {
+    const json = JSON.parse(text);
+
+    // 检查是否是包装格式 { data: ..., message: ..., success: ... }
+    if (json && typeof json === 'object') {
+      // 如果有 data 字段且 success 不为 false，返回 data
+      if ('data' in json && json.success !== false) {
+        return json.data;
+      }
+      // 如果有 message 且 success 为 false，抛出错误
+      if ('success' in json && json.success === false) {
+        throw new Error(json.message || '请求失败');
+      }
+    }
+
+    // 直接返回 JSON 数据
+    return json as T;
+  } catch (e) {
+    // JSON 解析失败，返回空或抛出错误
+    if (e instanceof SyntaxError) {
+      console.error('JSON 解析失败:', text.substring(0, 200));
+      throw new Error('响应格式错误');
+    }
+    throw e;
   }
-
-  throw new Error(apiResponse.message || '未知错误');
 }
 
 async function get<T>(url: string): Promise<T> {
@@ -60,12 +97,14 @@ export const ApiClient = {
   },
 
   async getOfficialPlaylists(startIndex: number, pageSize: number, year: number) {
-    const url = `${API_BASE_URL}/api/playlists/official?startIndex=${startIndex}&pageSize=${pageSize}&year=${year}`;
+    // 正确的端点: /api/playlists (不是 /api/playlists/official)
+    const url = `${API_BASE_URL}/api/playlists?startIndex=${startIndex}&pageSize=${pageSize}&isSetlist=true&year=${year}`;
     return get<import('./models').Playlist[]>(url);
   },
 
   async getPublicPlaylists() {
-    const url = `${API_BASE_URL}/api/playlists/public`;
+    // 正确的端点: /api/playlist/public (注意是单数 playlist)
+    const url = `${API_BASE_URL}/api/playlist/public`;
     return get<import('./models').Playlist[]>(url);
   },
 
@@ -86,7 +125,7 @@ export const ApiClient = {
   },
 
   async getSongPoll(songId: string) {
-    const url = `${API_BASE_URL}/api/songs/${songId}/poll`;
+    const url = `${API_BASE_URL}/api/polls/song/${songId}`;
     return get<import('./models').SongPoll[]>(url);
   },
 
@@ -98,7 +137,8 @@ export const ApiClient = {
 
   // 探索相关
   async getTrendingSongs(days: number) {
-    const url = `${API_BASE_URL}/api/explore/trending?days=${days}`;
+    // 正确的端点: /api/explore/trendings (复数)
+    const url = `${API_BASE_URL}/api/explore/trendings?days=${days}`;
     return get<import('./models').TrendingSong[]>(url);
   },
 
@@ -109,12 +149,13 @@ export const ApiClient = {
   },
 
   getRadioStreamUrl() {
-    return RADIO_STREAM_URL;
+    return `${RADIO_STREAM_URL}/listen/neuro_21/radio.mp3`;
   },
 
   // 统计相关
   async getCoverDistribution() {
-    const url = `${API_BASE_URL}/api/statistics/cover-distribution`;
+    // 正确的端点: /api/stats/cover-distribution (不是 statistics)
+    const url = `${API_BASE_URL}/api/stats/cover-distribution`;
     return get<import('./models').CoverDistribution>(url);
   },
 };
