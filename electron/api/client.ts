@@ -83,17 +83,31 @@ async function get<T>(url: string): Promise<T> {
   return handleResponse<T>(response);
 }
 
-async function post<T>(url: string, body: unknown): Promise<T> {
-  console.log(`发送 POST 请求: ${url}`);
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'User-Agent': 'NeuroKaraokeDesktop/1.0',
-    },
-    body: JSON.stringify(body),
-  });
-  return handleResponse<T>(response);
+// 缓存所有歌曲数据
+let allSongsCache: import('./models').SongListItem[] | null = null;
+
+// 客户端搜索过滤函数
+function filterSongs(
+  songs: import('./models').SongListItem[],
+  request: import('./models').SongSearchRequest
+): import('./models').SongListItem[] {
+  let filtered = [...songs];
+
+  // 文本搜索 - 搜索标题和艺术家
+  if (request.search) {
+    const searchLower = request.search.toLowerCase().trim();
+    filtered = filtered.filter(song => {
+      // 标题匹配
+      const titleMatch = song.title?.toLowerCase().includes(searchLower);
+      // 翻唱艺术家匹配
+      const coverArtistMatch = song.coverArtists?.some(a => a.toLowerCase().includes(searchLower));
+      // 原唱艺术家匹配
+      const originalArtistMatch = song.originalArtists?.some(a => a.toLowerCase().includes(searchLower));
+      return titleMatch || coverArtistMatch || originalArtistMatch;
+    });
+  }
+
+  return filtered;
 }
 
 // 导出 API 函数
@@ -105,13 +119,11 @@ export const ApiClient = {
   },
 
   async getOfficialPlaylists(startIndex: number, pageSize: number, year: number) {
-    // 正确的端点: /api/playlists (不是 /api/playlists/official)
     const url = `${API_BASE_URL}/api/playlists?startIndex=${startIndex}&pageSize=${pageSize}&isSetlist=true&year=${year}`;
     return get<import('./models').Playlist[]>(url);
   },
 
   async getPublicPlaylists() {
-    // 正确的端点: /api/playlist/public (注意是单数 playlist)
     const url = `${API_BASE_URL}/api/playlist/public`;
     return get<import('./models').Playlist[]>(url);
   },
@@ -123,8 +135,31 @@ export const ApiClient = {
   },
 
   async searchSongs(request: import('./models').SongSearchRequest) {
-    const url = `${API_BASE_URL}/api/songs/search`;
-    return post<import('./models').SongSearchResponse>(url, request);
+    // 如果没有缓存，先获取所有歌曲
+    if (!allSongsCache) {
+      console.log('获取所有歌曲用于搜索...');
+      const url = `${API_BASE_URL}/api/songs`;
+      allSongsCache = await get<import('./models').SongListItem[]>(url);
+      console.log(`已缓存 ${allSongsCache?.length || 0} 首歌曲`);
+    }
+
+    // 客户端过滤
+    const filtered = filterSongs(allSongsCache!, request);
+    console.log(`搜索 "${request.search}" 找到 ${filtered.length} 首歌曲`);
+
+    // 分页
+    const page = request.page || 0;
+    const pageSize = request.pageSize || 20;
+    const startIndex = page * pageSize;
+    const endIndex = startIndex + pageSize;
+    const paginatedItems = filtered.slice(startIndex, endIndex);
+
+    return {
+      items: paginatedItems,
+      totalCount: filtered.length,
+      page: page,
+      pageSize: pageSize,
+    } as import('./models').SongSearchResponse;
   },
 
   async getSongDetails(songId: string) {
@@ -145,7 +180,6 @@ export const ApiClient = {
 
   // 探索相关
   async getTrendingSongs(days: number) {
-    // 正确的端点: /api/explore/trendings (复数)
     const url = `${API_BASE_URL}/api/explore/trendings?days=${days}`;
     return get<import('./models').TrendingSong[]>(url);
   },
@@ -162,7 +196,6 @@ export const ApiClient = {
 
   // 统计相关
   async getCoverDistribution() {
-    // 正确的端点: /api/stats/cover-distribution (不是 statistics)
     const url = `${API_BASE_URL}/api/stats/cover-distribution`;
     return get<import('./models').CoverDistribution>(url);
   },

@@ -61,134 +61,31 @@
   background: rgba(102, 126, 234, 0.1);
 }
 
-/* 歌曲卡片网格样式 */
-.song-card-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-}
-
+/* 歌曲卡片响应式 */
 @media (max-width: 1200px) {
   .song-card-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, 1fr) !important;
   }
 }
 
 @media (max-width: 900px) {
   .song-card-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, 1fr) !important;
   }
 }
 
 @media (max-width: 600px) {
   .song-card-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
   }
 }
 
-/* 筛选面板折叠面板样式 */
-.ant-collapse-header {
-  padding: 12px 0 !important;
-  align-items: center !important;
+/* 滚动条隐藏 */
+.overflow-x-auto::-webkit-scrollbar {
+  display: none;
 }
 
-.ant-collapse-content-box {
-  padding: 0 0 12px 0 !important;
-}
-
-/* 热门搜索关键词样式 */
-.hot-search-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.hot-search-tag {
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.hot-search-tag:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-/* 推荐标签卡片样式 */
-.recommend-tag-card {
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  overflow: hidden;
-}
-
-.recommend-tag-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-}
-
-/* 搜索结果标题 */
-.search-results-header {
-  margin-bottom: 24px;
-}
-
-/* 空状态样式 */
-.search-empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 64px 32px;
-  text-align: center;
-}
-
-/* 默认状态热门搜索 */
-.default-hot-searches {
-  margin-bottom: 32px;
-}
-
-.default-hot-searches-title {
-  font-size: 16px;
-  font-weight: 500;
-  margin-bottom: 16px;
-}
-
-/* 默认状态搜索历史 */
-.default-search-history {
-  margin-bottom: 32px;
-}
-
-.default-search-history-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  cursor: pointer;
-}
-
-.default-search-history-item:hover {
-  background: rgba(255, 255, 255, 0.04);
-}
-
-/* 默认状态推荐标签 */
-.default-recommend-tags {
-  margin-top: 32px;
-}
-
-.default-recommend-tags-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-}
-
-@media (max-width: 1200px) {
-  .default-recommend-tags-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-@media (max-width: 900px) {
-  .default-recommend-tags-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+.overflow-x-auto {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
