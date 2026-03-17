@@ -93,18 +93,21 @@ function filterSongs(
 ): import('./models').SongListItem[] {
   let filtered = [...songs];
 
-  // 文本搜索 - 搜索标题和艺术家
+  // 文本搜索 - 支持分词搜索
   if (request.search) {
-    const searchLower = request.search.toLowerCase().trim();
-    filtered = filtered.filter(song => {
-      // 标题匹配
-      const titleMatch = song.title?.toLowerCase().includes(searchLower);
-      // 翻唱艺术家匹配
-      const coverArtistMatch = song.coverArtists?.some(a => a.toLowerCase().includes(searchLower));
-      // 原唱艺术家匹配
-      const originalArtistMatch = song.originalArtists?.some(a => a.toLowerCase().includes(searchLower));
-      return titleMatch || coverArtistMatch || originalArtistMatch;
-    });
+    const searchTerms = request.search.toLowerCase().trim().split(/\s+/).filter(Boolean);
+
+    if (searchTerms.length > 0) {
+      filtered = filtered.filter(song => {
+        const titleLower = song.title?.toLowerCase() || '';
+        const coverArtistsLower = song.coverArtists?.map(a => a.toLowerCase()).join(' ') || '';
+        const originalArtistsLower = song.originalArtists?.map(a => a.toLowerCase()).join(' ') || '';
+        const searchText = `${titleLower} ${coverArtistsLower} ${originalArtistsLower}`;
+
+        // 匹配任意一个关键词即可
+        return searchTerms.some(term => searchText.includes(term));
+      });
+    }
   }
 
   return filtered;

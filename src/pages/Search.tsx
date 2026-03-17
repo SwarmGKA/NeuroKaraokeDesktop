@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { Typography, Flex, Tag, Select, Slider, Popover, Button, Skeleton, Empty } from 'antd'
-import { HistoryOutlined, FireOutlined, DownOutlined, PlayCircleOutlined } from '@ant-design/icons'
+import { Typography, Flex, Tag, Select, Skeleton, Empty, Button, Card } from 'antd'
+import { HistoryOutlined, FireOutlined, PlayCircleOutlined } from '@ant-design/icons'
 import { useI18n } from '../i18n'
 import { useHomeData, getThumbnailUrl } from '../stores/homeDataStore'
 import { useSearchHistory } from '../hooks/useSearchHistory'
@@ -11,16 +11,9 @@ import '../components/search/Search.css'
 
 const { Title, Text } = Typography
 
-// 音乐调性选项
-const MUSICAL_KEYS = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
-
 // 热门搜索词
 const HOT_SEARCHES_ZH = ['Neuro', 'Evil', 'Vedal', 'duet', 'cover', 'karaoke']
 const HOT_SEARCHES_EN = ['Neuro', 'Evil', 'Vedal', 'duet', 'cover', 'karaoke']
-
-// 推荐标签
-const RECOMMEND_TAGS_ZH = ['流行', '摇滚', '电子', '民谣', '说唱', 'R&B', '爵士', '古典']
-const RECOMMEND_TAGS_EN = ['Pop', 'Rock', 'Electronic', 'Folk', 'Hip Hop', 'R&B', 'Jazz', 'Classical']
 
 // 将 SongListItem 转换为 Song 格式
 function songListItemToSong(item: SongListItem): Song {
@@ -40,175 +33,121 @@ function songListItemToSong(item: SongListItem): Song {
   }
 }
 
-// 歌曲卡片组件
+// 横向歌曲卡片组件（参考 TrendingSongCard 样式）
 function SongCard({
   song,
-  isDark,
   onPlay,
 }: {
   song: SongListItem
-  isDark: boolean
   onPlay: () => void
 }) {
+  const { t } = useI18n()
   const coverUrl = song.coverArt?.cloudflareId
     ? getThumbnailUrl(song.coverArt.cloudflareId)
     : undefined
 
-  const artists = song.coverArtists?.join(', ') || song.originalArtists?.join(', ')
-  const isHot = (song.playCount || 0) > 10000
+  const artists = song.coverArtists?.join(', ') || song.originalArtists?.join(', ') || t('song.unknownArtist')
 
   return (
-    <div
-      className="song-card-wrapper"
+    <Card
+      hoverable
       onClick={onPlay}
       style={{
-        cursor: 'pointer',
         borderRadius: 12,
         overflow: 'hidden',
-        backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : '#fff',
-        border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
-        transition: 'transform 0.2s, box-shadow 0.2s',
+        cursor: 'pointer',
+      }}
+      styles={{
+        body: { padding: 12 },
       }}
     >
-      {/* 正方形封面 */}
-      <div
-        style={{
-          width: '100%',
-          paddingBottom: '100%',
-          position: 'relative',
-          overflow: 'hidden',
-        }}
-      >
-        {coverUrl ? (
-          <img
-            src={coverUrl}
-            alt={song.title || ''}
-            loading="lazy"
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-            }}
-          />
-        ) : (
+      <Flex gap={12} align="center">
+        {/* 封面 */}
+        <div
+          style={{
+            width: 56,
+            height: 56,
+            borderRadius: 8,
+            overflow: 'hidden',
+            flexShrink: 0,
+            position: 'relative',
+          }}
+        >
+          {coverUrl ? (
+            <img
+              src={coverUrl}
+              alt={song.title || ''}
+              loading="lazy"
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
+          ) : (
+            <div
+              style={{
+                width: '100%',
+                height: '100%',
+                background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Text style={{ color: '#fff', fontSize: 20 }}>♪</Text>
+            </div>
+          )}
+          {/* 悬浮播放图标 */}
           <div
             style={{
               position: 'absolute',
               top: 0,
               left: 0,
-              width: '100%',
-              height: '100%',
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              right: 0,
+              bottom: 0,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              background: 'rgba(0,0,0,0.4)',
+              opacity: 0,
+              transition: 'opacity 0.2s ease',
             }}
+            className="play-overlay"
           >
-            <Text style={{ color: '#fff', fontSize: 32 }}>♪</Text>
+            <PlayCircleOutlined style={{ fontSize: 24, color: '#fff' }} />
           </div>
-        )}
-
-        {/* 热门标记 */}
-        {isHot && (
-          <Tag
-            icon={<FireOutlined />}
-            color="red"
-            style={{
-              position: 'absolute',
-              top: 8,
-              right: 8,
-              margin: 0,
-              borderRadius: 4,
-            }}
-          >
-            热门
-          </Tag>
-        )}
-
-        {/* 悬浮播放按钮 */}
-        <div
-          className="song-card-overlay"
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'rgba(0,0,0,0.5)',
-            opacity: 0,
-            transition: 'opacity 0.2s ease',
-          }}
-        >
-          <PlayCircleOutlined style={{ fontSize: 48, color: '#fff' }} />
         </div>
-      </div>
 
-      {/* 信息区域 */}
-      <div style={{ padding: 12 }}>
-        <Text
-          ellipsis
-          style={{
-            fontWeight: 500,
-            fontSize: 14,
-            display: 'block',
-            color: isDark ? '#fff' : '#1a1a1a',
-          }}
-        >
-          {song.title}
-        </Text>
-        <Text
-          ellipsis
-          type="secondary"
-          style={{ fontSize: 12, marginTop: 4, display: 'block' }}
-        >
-          {artists || '未知艺术家'}
-        </Text>
-      </div>
-
-      <style>{`
-        .song-card-wrapper:hover {
-          transform: translateY(-4px);
-          box-shadow: 0 8px 24px rgba(0,0,0,0.2);
-        }
-        .song-card-wrapper:hover .song-card-overlay {
-          opacity: 1;
-        }
-      `}</style>
-    </div>
+        {/* 信息 */}
+        <Flex vertical flex={1} style={{ minWidth: 0 }}>
+          <Text
+            ellipsis
+            style={{ fontWeight: 500, fontSize: 14 }}
+          >
+            {song.title || t('song.defaultTitle')}
+          </Text>
+          <Text
+            ellipsis
+            type="secondary"
+            style={{ fontSize: 12, marginTop: 2 }}
+          >
+            {artists}
+          </Text>
+        </Flex>
+      </Flex>
+    </Card>
   )
 }
 
 // 骨架卡片
 function SkeletonCard() {
   return (
-    <div
-      style={{
-        borderRadius: 12,
-        overflow: 'hidden',
-        backgroundColor: 'rgba(255,255,255,0.04)',
-        border: '1px solid rgba(255,255,255,0.08)',
-      }}
-    >
-      <Skeleton.Image
-        active
-        style={{
-          width: '100%',
-          height: 0,
-          paddingBottom: '100%',
-          borderRadius: 0,
-        }}
-      />
-      <div style={{ padding: 12 }}>
-        <Skeleton active paragraph={false} title={{ width: '80%' }} />
-        <Skeleton active paragraph={false} title={{ width: '60%' }} style={{ marginTop: 8 }} />
-      </div>
-    </div>
+    <Card style={{ borderRadius: 12 }} styles={{ body: { padding: 12 } }}>
+      <Flex gap={12} align="center">
+        <Skeleton.Avatar active size={56} shape="square" />
+        <Flex vertical flex={1}>
+          <Skeleton active paragraph={false} title={{ width: '70%' }} />
+          <Skeleton active paragraph={false} title={{ width: '50%' }} />
+        </Flex>
+      </Flex>
+    </Card>
   )
 }
 
@@ -216,7 +155,7 @@ export function Search() {
   const { t, language } = useI18n()
   const { artists } = useHomeData()
   const { history, addHistory, removeHistory, clearHistory } = useSearchHistory()
-  const { searchState, performSearch } = useSearchState()
+  const { searchState, performSearch, resetSearch } = useSearchState()
   const { playSong } = usePlayer()
 
   // 状态
@@ -226,32 +165,22 @@ export function Search() {
   const [loading, setLoading] = useState(false)
   const [hasMore, setHasMore] = useState(true)
 
-  // 筛选状态
+  // 筛选状态（仅保留艺术家筛选）
   const [selectedArtists, setSelectedArtists] = useState<string[]>([])
-  const [energyLevel, setEnergyLevel] = useState<number | null>(null)
-  const [selectedKey, setSelectedKey] = useState<string | null>(null)
-  const [showMoreFilters, setShowMoreFilters] = useState(false)
 
   const pageSize = 20
-  const isDark = true
 
   const hotSearches = language === 'zh' ? HOT_SEARCHES_ZH : HOT_SEARCHES_EN
-  const recommendTags = language === 'zh' ? RECOMMEND_TAGS_ZH : RECOMMEND_TAGS_EN
 
   // 当前搜索词
   const query = searchState.query
 
-  // 相关艺术家
-  const relatedArtists = useMemo(() => {
-    if (results.length === 0) return artists.slice(0, 8)
-    // 基于搜索结果提取相关艺术家
-    const artistNames = new Set<string>()
-    results.forEach(song => {
-      song.coverArtists?.forEach(a => artistNames.add(a))
-      song.originalArtists?.forEach(a => artistNames.add(a))
-    })
-    return artists.filter(a => artistNames.has(a.name || '')).slice(0, 8)
-  }, [results, artists])
+  // 组件卸载时重置搜索状态
+  useEffect(() => {
+    return () => {
+      resetSearch()
+    }
+  }, [resetSearch])
 
   // 搜索歌曲
   const searchSongs = useCallback(async (
@@ -275,8 +204,6 @@ export function Search() {
         page: pageNum,
         pageSize,
         artistIds: selectedArtists.length > 0 ? selectedArtists : undefined,
-        energyLevel: energyLevel || undefined,
-        key: selectedKey || undefined,
       })
 
       if (response) {
@@ -291,7 +218,7 @@ export function Search() {
     } finally {
       setLoading(false)
     }
-  }, [selectedArtists, energyLevel, selectedKey])
+  }, [selectedArtists])
 
   // 搜索状态变化时触发搜索
   useEffect(() => {
@@ -306,7 +233,7 @@ export function Search() {
     if (query || selectedArtists.length > 0) {
       searchSongs(query, 0, true)
     }
-  }, [selectedArtists, energyLevel, selectedKey])
+  }, [selectedArtists])
 
   // 加载更多
   const handleLoadMore = useCallback(() => {
@@ -326,12 +253,6 @@ export function Search() {
     performSearch(keyword)
   }
 
-  // 点击标签搜索
-  const handleTagClick = (tagName: string) => {
-    addHistory(tagName)
-    performSearch(tagName)
-  }
-
   // 播放歌曲
   const handlePlay = (song: SongListItem, index: number) => {
     const allSongs = results.map(s => songListItemToSong(s))
@@ -342,11 +263,9 @@ export function Search() {
   // 清除筛选
   const clearFilters = () => {
     setSelectedArtists([])
-    setEnergyLevel(null)
-    setSelectedKey(null)
   }
 
-  const hasFilters = selectedArtists.length > 0 || energyLevel !== null || selectedKey !== null
+  const hasFilters = selectedArtists.length > 0
 
   // 艺术家下拉选项
   const artistOptions = useMemo(() => {
@@ -360,7 +279,7 @@ export function Search() {
       }))
   }, [artists])
 
-  // 渲染默认状态（无搜索词）
+  // 渲染默认状态（无搜索词）- 平实质朴的现代化设计
   const renderDefaultState = () => (
     <div style={{ padding: 24 }}>
       {/* 热门搜索 */}
@@ -375,11 +294,12 @@ export function Search() {
               key={keyword}
               style={{
                 cursor: 'pointer',
-                borderRadius: 16,
+                borderRadius: 4,
                 padding: '4px 12px',
                 margin: 0,
-                background: 'rgba(255,255,255,0.08)',
-                border: 'none',
+                background: 'rgba(255,255,255,0.06)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                color: 'rgba(255,255,255,0.85)',
               }}
               onClick={() => handleHotSearchClick(keyword)}
             >
@@ -391,8 +311,8 @@ export function Search() {
 
       {/* 搜索历史 */}
       {history.length > 0 && (
-        <div style={{ marginBottom: 32 }}>
-          <Flex justify="space-between" align="center" style={{ marginBottom: 16 }}>
+        <div>
+          <Flex justify="space-between" align="center" style={{ marginBottom: 12 }}>
             <Text strong style={{ fontSize: 16 }}>
               <HistoryOutlined style={{ marginRight: 8 }} />
               {t('search.history')}
@@ -405,55 +325,35 @@ export function Search() {
               {t('search.clearHistory')}
             </Text>
           </Flex>
-          <Flex wrap="wrap" gap={8}>
+          <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
             {history.map((item, index) => (
-              <Tag
+              <Flex
                 key={`${item}-${index}`}
-                closable
-                onClose={(e) => {
-                  e.preventDefault()
-                  removeHistory(item)
-                }}
-                onClick={() => handleHistoryClick(item)}
+                justify="space-between"
+                align="center"
                 style={{
-                  cursor: 'pointer',
-                  borderRadius: 16,
-                  padding: '4px 12px',
-                  margin: 0,
-                  background: 'rgba(255,255,255,0.08)',
-                  border: 'none',
+                  padding: '12px 0',
+                  borderBottom: index < history.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none',
                 }}
               >
-                {item}
-              </Tag>
+                <Text
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => handleHistoryClick(item)}
+                >
+                  {item}
+                </Text>
+                <Text
+                  type="secondary"
+                  style={{ cursor: 'pointer', fontSize: 16 }}
+                  onClick={() => removeHistory(item)}
+                >
+                  ×
+                </Text>
+              </Flex>
             ))}
-          </Flex>
+          </div>
         </div>
       )}
-
-      {/* 推荐标签 */}
-      <div>
-        <Text strong style={{ fontSize: 16, display: 'block', marginBottom: 16 }}>
-          {t('search.recommendTags')}
-        </Text>
-        <Flex wrap="wrap" gap={12}>
-          {recommendTags.map((tag) => (
-            <div
-              key={tag}
-              onClick={() => handleTagClick(tag)}
-              style={{
-                padding: '8px 16px',
-                borderRadius: 8,
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                cursor: 'pointer',
-                transition: 'transform 0.2s',
-              }}
-            >
-              <Text style={{ color: '#fff', fontWeight: 500 }}>{tag}</Text>
-            </div>
-          ))}
-        </Flex>
-      </div>
     </div>
   )
 
@@ -503,87 +403,9 @@ export function Search() {
           maxTagPlaceholder={(omitted) => `+${omitted.length}`}
           allowClear
         />
-
-        {/* 能量值筛选 */}
-        <Popover
-          content={
-            <div style={{ width: 200 }}>
-              <Slider
-                min={1}
-                max={10}
-                value={energyLevel || 5}
-                onChange={setEnergyLevel}
-                tooltip={{ formatter: (v) => `能量值: ${v}` }}
-              />
-              <Flex justify="space-between" style={{ marginTop: 8 }}>
-                <Text type="secondary" style={{ fontSize: 11 }}>低</Text>
-                <Text type="secondary" style={{ fontSize: 11 }}>高</Text>
-              </Flex>
-            </div>
-          }
-          title="能量值"
-          trigger="click"
-        >
-          <Button>
-            能量值 {energyLevel ? `: ${energyLevel}` : ''}
-          </Button>
-        </Popover>
-
-        {/* 调性选择器 */}
-        <Select
-          placeholder="调性"
-          value={selectedKey}
-          onChange={setSelectedKey}
-          allowClear
-          style={{ width: 100 }}
-        >
-          {MUSICAL_KEYS.map(key => (
-            <Select.Option key={key} value={key}>{key}</Select.Option>
-          ))}
-        </Select>
-
-        {/* 展开更多筛选 */}
-        <Button
-          type="text"
-          onClick={() => setShowMoreFilters(!showMoreFilters)}
-          icon={<DownOutlined style={{ transform: showMoreFilters ? 'rotate(180deg)' : 'none' }} />}
-        >
-          更多筛选
-        </Button>
       </div>
 
-      {/* 更多筛选条件（可展开） */}
-      {showMoreFilters && (
-        <div
-          style={{
-            padding: 16,
-            marginBottom: 24,
-            borderRadius: 8,
-            background: 'rgba(255,255,255,0.04)',
-          }}
-        >
-          <Text type="secondary" style={{ fontSize: 12, marginBottom: 12, display: 'block' }}>
-            标签筛选
-          </Text>
-          <Flex wrap="wrap" gap={8}>
-            {recommendTags.map((tag) => (
-              <Tag
-                key={tag}
-                style={{
-                  cursor: 'pointer',
-                  borderRadius: 4,
-                  margin: 0,
-                }}
-                onClick={() => handleTagClick(tag)}
-              >
-                {tag}
-              </Tag>
-            ))}
-          </Flex>
-        </div>
-      )}
-
-      {/* 歌曲网格 */}
+      {/* 歌曲列表（横向卡片样式） */}
       {results.length === 0 && !loading ? (
         <Empty
           image={Empty.PRESENTED_IMAGE_SIMPLE}
@@ -595,20 +417,18 @@ export function Search() {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(4, 1fr)',
-              gap: 16,
+              gridTemplateColumns: 'repeat(2, 1fr)',
+              gap: 12,
             }}
           >
             {results.map((song, index) => (
               <SongCard
                 key={song.id || `${song.title}-${index}`}
                 song={song}
-                
-                isDark={isDark}
                 onPlay={() => handlePlay(song, index)}
               />
             ))}
-            {loading && Array.from({ length: 8 }).map((_, i) => (
+            {loading && Array.from({ length: 4 }).map((_, i) => (
               <SkeletonCard key={`skeleton-${i}`} />
             ))}
           </div>
@@ -621,109 +441,6 @@ export function Search() {
           )}
         </>
       )}
-
-      {/* 底部推荐区域 - 相关艺术家 */}
-      {relatedArtists.length > 0 && (
-        <div style={{ marginTop: 48 }}>
-          <Text strong style={{ fontSize: 16, display: 'block', marginBottom: 16 }}>
-            相关艺术家
-          </Text>
-          <div
-            style={{
-              display: 'flex',
-              gap: 16,
-              overflowX: 'auto',
-              paddingBottom: 8,
-            }}
-          >
-            {relatedArtists.map((artist) => (
-              <div
-                key={artist.id}
-                onClick={() => {
-                  if (artist.id) {
-                    setSelectedArtists([artist.id])
-                  }
-                }}
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  minWidth: 80,
-                  cursor: 'pointer',
-                }}
-              >
-                <div
-                  style={{
-                    width: 64,
-                    height: 64,
-                    borderRadius: '50%',
-                    overflow: 'hidden',
-                    background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginBottom: 8,
-                  }}
-                >
-                  {artist.imagePath ? (
-                    <img
-                      src={getThumbnailUrl(artist.imagePath)}
-                      alt={artist.name || ''}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    />
-                  ) : (
-                    <Text style={{ color: '#fff', fontSize: 20 }}>
-                      {artist.name?.charAt(0).toUpperCase()}
-                    </Text>
-                  )}
-                </div>
-                <Text
-                  ellipsis
-                  style={{
-                    fontSize: 12,
-                    textAlign: 'center',
-                    maxWidth: 80,
-                  }}
-                >
-                  {artist.name}
-                </Text>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* 底部推荐区域 - 热门标签 */}
-      <div style={{ marginTop: 32 }}>
-        <Text strong style={{ fontSize: 16, display: 'block', marginBottom: 16 }}>
-          热门标签
-        </Text>
-        <div
-          style={{
-            display: 'flex',
-            gap: 12,
-            overflowX: 'auto',
-            paddingBottom: 8,
-          }}
-        >
-          {recommendTags.map((tag) => (
-            <div
-              key={tag}
-              onClick={() => handleTagClick(tag)}
-              style={{
-                padding: '8px 16px',
-                borderRadius: 8,
-                background: 'rgba(255,255,255,0.08)',
-                cursor: 'pointer',
-                whiteSpace: 'nowrap',
-                transition: 'background 0.2s',
-              }}
-            >
-              <Text>{tag}</Text>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   )
 
@@ -732,7 +449,7 @@ export function Search() {
       style={{
         height: '100%',
         overflow: 'auto',
-        backgroundColor: isDark ? '#1a1a1a' : '#ffffff',
+        backgroundColor: '#1a1a1a',
       }}
     >
       {/* 页面标题 */}
@@ -755,6 +472,16 @@ export function Search() {
       <div style={{ minHeight: 'calc(100% - 80px)' }}>
         {query || selectedArtists.length > 0 ? renderSearchResults() : renderDefaultState()}
       </div>
+
+      {/* 悬浮样式 */}
+      <style>{`
+        .play-overlay {
+          opacity: 0;
+        }
+        .ant-card:hover .play-overlay {
+          opacity: 1;
+        }
+      `}</style>
     </div>
   )
 }

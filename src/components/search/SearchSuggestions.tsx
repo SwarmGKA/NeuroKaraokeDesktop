@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Typography, Flex, Spin, Empty } from 'antd'
+import { Typography, Flex, Empty, Skeleton } from 'antd'
 import { SearchOutlined, HistoryOutlined, PlayCircleOutlined, CloseOutlined, UserOutlined } from '@ant-design/icons'
 import { useHomeData, getThumbnailUrl } from '../../stores/homeDataStore'
 import { useI18n } from '../../i18n'
@@ -15,6 +15,19 @@ interface SearchSuggestionsProps {
   onRemoveHistory: (query: string) => void
   onPlaySong: () => void
   onClose: () => void
+}
+
+// 骨架项组件
+function SkeletonItem() {
+  return (
+    <Flex align="center" gap={12} style={{ padding: '8px 16px' }}>
+      <Skeleton.Avatar active size={40} shape="square" />
+      <Flex vertical flex={1}>
+        <Skeleton active paragraph={false} title={{ width: '60%' }} />
+        <Skeleton active paragraph={false} title={{ width: '40%' }} />
+      </Flex>
+    </Flex>
+  )
 }
 
 // 歌曲搜索建议项
@@ -246,8 +259,10 @@ export function SearchSuggestions({
       return
     }
 
+    // 立即设置 loading 状态
+    setLoading(true)
+
     const searchSuggestions = async () => {
-      setLoading(true)
       try {
         // 搜索歌曲
         const songResponse = await window.electronAPI.searchSongs({
@@ -259,8 +274,13 @@ export function SearchSuggestions({
 
         // 搜索艺术家（本地过滤）
         const queryLower = query.toLowerCase()
+        const searchTerms = queryLower.split(/\s+/).filter(Boolean)
         const filteredArtists = artists
-          .filter(a => a.name?.toLowerCase().includes(queryLower))
+          .filter(a => {
+            const nameLower = a.name?.toLowerCase() || ''
+            // 匹配任意一个关键词
+            return searchTerms.some(term => nameLower.includes(term))
+          })
           .slice(0, 5)
         setArtistResults(filteredArtists)
       } catch (error) {
@@ -271,7 +291,10 @@ export function SearchSuggestions({
     }
 
     const timer = setTimeout(searchSuggestions, 150)
-    return () => clearTimeout(timer)
+    return () => {
+      clearTimeout(timer)
+      setLoading(false)
+    }
   }, [query, artists])
 
   const hasResults = songResults.length > 0 || artistResults.length > 0
@@ -299,9 +322,24 @@ export function SearchSuggestions({
       }}
     >
       {loading ? (
-        <Flex justify="center" align="center" style={{ padding: 32 }}>
-          <Spin />
-        </Flex>
+        // 显示骨架屏
+        <div>
+          <Text
+            type="secondary"
+            style={{
+              display: 'block',
+              padding: '12px 16px 8px',
+              fontSize: 12,
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+            }}
+          >
+            {t('search.songs')}
+          </Text>
+          {Array.from({ length: 3 }).map((_, i) => (
+            <SkeletonItem key={i} />
+          ))}
+        </div>
       ) : showHistory ? (
         // 显示搜索历史
         <div>

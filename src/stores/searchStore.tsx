@@ -8,6 +8,7 @@ interface SearchState {
 interface SearchContextType {
   searchState: SearchState
   performSearch: (query: string) => void
+  resetSearch: () => void
 }
 
 const SearchContext = createContext<SearchContextType | null>(null)
@@ -25,8 +26,15 @@ export function SearchProvider({ children }: { children: ReactNode }) {
     })
   }, [])
 
+  const resetSearch = useCallback(() => {
+    setSearchState({
+      query: '',
+      timestamp: 0,
+    })
+  }, [])
+
   return (
-    <SearchContext.Provider value={{ searchState, performSearch }}>
+    <SearchContext.Provider value={{ searchState, performSearch, resetSearch }}>
       {children}
     </SearchContext.Provider>
   )
