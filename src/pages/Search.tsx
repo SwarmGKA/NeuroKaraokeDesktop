@@ -43,12 +43,10 @@ function songListItemToSong(item: SongListItem): Song {
 // 歌曲卡片组件
 function SongCard({
   song,
-  index,
   isDark,
   onPlay,
 }: {
   song: SongListItem
-  index: number
   isDark: boolean
   onPlay: () => void
 }) {
@@ -605,7 +603,7 @@ export function Search() {
               <SongCard
                 key={song.id || `${song.title}-${index}`}
                 song={song}
-                index={index}
+                
                 isDark={isDark}
                 onPlay={() => handlePlay(song, index)}
               />
