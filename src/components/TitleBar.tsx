@@ -1,15 +1,17 @@
 import { Flex, Button, Typography } from 'antd'
 import { MinusOutlined, BorderOutlined, CloseOutlined, SoundOutlined } from '@ant-design/icons'
 import { useI18n } from '../i18n'
+import { GlobalSearchBar } from './search/GlobalSearchBar'
 
 const { Text } = Typography
 
 interface TitleBarProps {
   baseTheme: 'light' | 'dark'
   accentColor: string
+  onNavigateToSearch: () => void
 }
 
-export function TitleBar({ baseTheme, accentColor }: TitleBarProps) {
+export function TitleBar({ baseTheme, accentColor, onNavigateToSearch }: TitleBarProps) {
   const { t } = useI18n()
 
   const isDark = baseTheme === 'dark'
@@ -77,6 +79,9 @@ export function TitleBar({ baseTheme, accentColor }: TitleBarProps) {
         .title-bar-buttons {
           -webkit-app-region: no-drag;
         }
+        .title-bar-search {
+          -webkit-app-region: no-drag;
+        }
         .title-bar-button:hover {
           background-color: ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'} !important;
         }
@@ -114,6 +119,11 @@ export function TitleBar({ baseTheme, accentColor }: TitleBarProps) {
             {t('app.title')}
           </Text>
         </Flex>
+
+        {/* 中间搜索栏 */}
+        <div className="title-bar-search" style={{ flex: 1, maxWidth: 480, margin: '0 24px' }}>
+          <GlobalSearchBar isDark={isDark} onNavigateToSearch={onNavigateToSearch} />
+        </div>
 
         <Flex className="title-bar-buttons">
           <Button
