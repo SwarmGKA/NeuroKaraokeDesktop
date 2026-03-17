@@ -1,5 +1,23 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
-import type { Playlist, TrendingSong, RadioState, Artist } from '../types/api'
+import type { Playlist, TrendingSong, RadioState, Artist, CoverArt } from '../types/api'
+
+// 全局封面缓存（songId -> coverArt）
+const coverArtCache = new Map<string, CoverArt>()
+
+// 获取封面缓存
+export function getCoverArtFromCache(songId: string | undefined): CoverArt | undefined {
+  if (!songId) return undefined
+  return coverArtCache.get(songId)
+}
+
+// 更新封面缓存
+export function updateCoverArtCache(songs: TrendingSong[]) {
+  songs.forEach(song => {
+    if (song.id && song.coverArt) {
+      coverArtCache.set(song.id, song.coverArt)
+    }
+  })
+}
 
 // 全局数据状态接口
 interface HomeDataState {
@@ -94,23 +112,27 @@ export function HomeDataProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '获取推荐歌单失败'
       setPlaylistsError(errorMessage)
-      console.error('刷新推荐歌单失败:', err)
+      console.error('[HomeData] Failed to refresh playlists:', err)
     } finally {
       setPlaylistsLoading(false)
     }
   }, [])
 
-  // 刷新热门趋势
+  // Refresh trending songs
   const refreshTrending = useCallback(async () => {
     setTrendingLoading(true)
     setTrendingError(null)
     try {
       const result = await window.electronAPI.getTrendingSongs(7)
       setTrendingSongs(result || [])
+      // Update cover art cache
+      if (result) {
+        updateCoverArtCache(result)
+      }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '获取热门趋势失败'
+      const errorMessage = err instanceof Error ? err.message : 'Failed to refresh trending'
       setTrendingError(errorMessage)
-      console.error('刷新热门趋势失败:', err)
+      console.error('[HomeData] Failed to refresh trending:', err)
     } finally {
       setTrendingLoading(false)
     }
@@ -126,7 +148,7 @@ export function HomeDataProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '获取电台状态失败'
       setRadioError(errorMessage)
-      console.error('刷新电台状态失败:', err)
+      console.error('[HomeData] Failed to refresh radio:', err)
     } finally {
       setRadioLoading(false)
     }
@@ -142,7 +164,7 @@ export function HomeDataProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '获取艺术家列表失败'
       setArtistsError(errorMessage)
-      console.error('刷新艺术家列表失败:', err)
+      console.error('[HomeData] Failed to refresh artists:', err)
     } finally {
       setArtistsLoading(false)
     }
@@ -164,7 +186,7 @@ export function HomeDataProvider({ children }: { children: React.ReactNode }) {
     let mounted = true
 
     async function initHomeData() {
-      console.log('[HomeData] 开始预加载数据...')
+      console.log('[HomeData] Starting preload...')
       const startTime = performance.now()
 
       try {
@@ -185,10 +207,10 @@ export function HomeDataProvider({ children }: { children: React.ReactNode }) {
           setIsInitialized(true)
 
           const endTime = performance.now()
-          console.log(`[HomeData] 预加载完成，耗时 ${(endTime - startTime).toFixed(0)}ms`)
+          console.log(`[HomeData] Preload complete in ${(endTime - startTime).toFixed(0)}ms`)
         }
       } catch (err) {
-        console.error('[HomeData] 预加载失败:', err)
+        console.error('[HomeData] Preload failed:', err)
         if (mounted) {
           setPlaylistsLoading(false)
           setTrendingLoading(false)
@@ -206,7 +228,7 @@ export function HomeDataProvider({ children }: { children: React.ReactNode }) {
             setArtistsLoading(false)
           }
         } catch (err) {
-          console.error('[HomeData] 加载艺术家列表失败:', err)
+          console.error('[HomeData] Failed to load artists:', err)
           if (mounted) {
             setArtistsLoading(false)
           }

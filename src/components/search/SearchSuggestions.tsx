@@ -3,9 +3,32 @@ import { Typography, Flex, Empty, Skeleton } from 'antd'
 import { SearchOutlined, HistoryOutlined, PlayCircleOutlined, CloseOutlined, UserOutlined } from '@ant-design/icons'
 import { useHomeData, getThumbnailUrl } from '../../stores/homeDataStore'
 import { useI18n } from '../../i18n'
-import type { SongListItem, Artist } from '../../types/api'
+import type { SongListItem, Artist, CoverArt } from '../../types/api'
 
 const { Text } = Typography
+
+// 存储服务 URL
+const STORAGE_URL = 'https://storage.neurokaraoke.com'
+
+// 获取封面 URL 的辅助函数
+function getSongCoverUrl(coverArt: CoverArt | undefined, thumbnailArt: CoverArt | undefined): string | undefined {
+  // 优先使用 cloudflareId
+  const cloudflareId = coverArt?.cloudflareId || thumbnailArt?.cloudflareId
+  if (cloudflareId) {
+    return getThumbnailUrl(cloudflareId)
+  }
+
+  // 尝试使用 absolutePath
+  const absolutePath = coverArt?.absolutePath || thumbnailArt?.absolutePath
+  if (absolutePath) {
+    if (absolutePath.startsWith('http')) {
+      return absolutePath
+    }
+    return `${STORAGE_URL}${absolutePath.startsWith('/') ? '' : '/'}${absolutePath}`
+  }
+
+  return undefined
+}
 
 interface SearchSuggestionsProps {
   query: string
@@ -42,9 +65,8 @@ function SongSuggestionItem({
   onClick: () => void
   onPlay: () => void
 }) {
-  const coverUrl = song.coverArt?.cloudflareId
-    ? getThumbnailUrl(song.coverArt.cloudflareId)
-    : undefined
+  // 使用辅助函数获取封面 URL
+  const coverUrl = getSongCoverUrl(song.coverArt, song.thumbnailArt)
 
   const artists = song.coverArtists?.join(', ') || song.originalArtists?.join(', ')
 
@@ -284,7 +306,7 @@ export function SearchSuggestions({
           .slice(0, 5)
         setArtistResults(filteredArtists)
       } catch (error) {
-        console.error('搜索建议失败:', error)
+        console.error('[SearchSuggestions] Search failed:', error)
       } finally {
         setLoading(false)
       }

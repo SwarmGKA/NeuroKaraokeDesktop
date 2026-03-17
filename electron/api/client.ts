@@ -38,42 +38,42 @@ export function getHlsUrl(hlsPath: string | undefined): string | undefined {
 
 async function handleResponse<T>(response: globalThis.Response): Promise<T> {
   if (!response.ok) {
-    const errorText = await response.text().catch(() => '无法读取错误信息');
+    const errorText = await response.text().catch(() => 'Unable to read error');
     throw new Error(`HTTP ${response.status}: ${errorText}`);
   }
 
   const text = await response.text();
 
-  // 尝试解析 JSON
+  // Try to parse JSON
   try {
     const json = JSON.parse(text);
 
-    // 检查是否是包装格式 { data: ..., message: ..., success: ... }
+    // Check if it's a wrapped format { data: ..., message: ..., success: ... }
     if (json && typeof json === 'object') {
-      // 如果有 data 字段且 success 不为 false，返回 data
+      // If has data field and success is not false, return data
       if ('data' in json && json.success !== false) {
         return json.data;
       }
-      // 如果有 message 且 success 为 false，抛出错误
+      // If has message and success is false, throw error
       if ('success' in json && json.success === false) {
-        throw new Error(json.message || '请求失败');
+        throw new Error(json.message || 'Request failed');
       }
     }
 
-    // 直接返回 JSON 数据
+    // Return JSON data directly
     return json as T;
   } catch (e) {
-    // JSON 解析失败，返回空或抛出错误
+    // JSON parse failed
     if (e instanceof SyntaxError) {
-      console.error('JSON 解析失败:', text.substring(0, 200));
-      throw new Error('响应格式错误');
+      console.error('[API] JSON parse failed:', text.substring(0, 200));
+      throw new Error('Invalid response format');
     }
     throw e;
   }
 }
 
 async function get<T>(url: string): Promise<T> {
-  console.log(`发送 GET 请求: ${url}`);
+  console.log(`[API] GET: ${url}`);
   const response = await fetch(url, {
     method: 'GET',
     headers: {
@@ -138,19 +138,29 @@ export const ApiClient = {
   },
 
   async searchSongs(request: import('./models').SongSearchRequest) {
-    // 如果没有缓存，先获取所有歌曲
+    // Fetch all songs if not cached
     if (!allSongsCache) {
-      console.log('获取所有歌曲用于搜索...');
+      console.log('[API] Fetching all songs for search...');
       const url = `${API_BASE_URL}/api/songs`;
       allSongsCache = await get<import('./models').SongListItem[]>(url);
-      console.log(`已缓存 ${allSongsCache?.length || 0} 首歌曲`);
+      console.log(`[API] Cached ${allSongsCache?.length || 0} songs`);
     }
 
-    // 客户端过滤
+    // Client-side filtering
     const filtered = filterSongs(allSongsCache!, request);
-    console.log(`搜索 "${request.search}" 找到 ${filtered.length} 首歌曲`);
+    console.log(`[API] Search "${request.search}" found ${filtered.length} songs`);
 
-    // 分页
+    // Debug: print first result's cover data
+    if (filtered.length > 0) {
+      const first = filtered[0];
+      console.log('[DEBUG] First result cover data:', JSON.stringify({
+        title: first.title,
+        coverArt: first.coverArt,
+        thumbnailArt: first.thumbnailArt,
+      }, null, 2));
+    }
+
+    // Pagination
     const page = request.page || 0;
     const pageSize = request.pageSize || 20;
     const startIndex = page * pageSize;

@@ -6,10 +6,33 @@ import { useHomeData, getThumbnailUrl } from '../stores/homeDataStore'
 import { useSearchHistory } from '../hooks/useSearchHistory'
 import { useSearchState } from '../stores/searchStore'
 import { usePlayer } from '../stores/playerStore'
-import type { SongListItem, Song } from '../types/api'
+import type { SongListItem, Song, CoverArt } from '../types/api'
 import '../components/search/Search.css'
 
 const { Title, Text } = Typography
+
+// 存储服务 URL
+const STORAGE_URL = 'https://storage.neurokaraoke.com'
+
+// 获取封面 URL 的辅助函数
+function getSongCoverUrl(coverArt: CoverArt | undefined, thumbnailArt: CoverArt | undefined): string | undefined {
+  // 优先使用 cloudflareId
+  const cloudflareId = coverArt?.cloudflareId || thumbnailArt?.cloudflareId
+  if (cloudflareId) {
+    return getThumbnailUrl(cloudflareId)
+  }
+
+  // 尝试使用 absolutePath
+  const absolutePath = coverArt?.absolutePath || thumbnailArt?.absolutePath
+  if (absolutePath) {
+    if (absolutePath.startsWith('http')) {
+      return absolutePath
+    }
+    return `${STORAGE_URL}${absolutePath.startsWith('/') ? '' : '/'}${absolutePath}`
+  }
+
+  return undefined
+}
 
 // 热门搜索词
 const HOT_SEARCHES_ZH = ['Neuro', 'Evil', 'Vedal', 'duet', 'cover', 'karaoke']
@@ -42,9 +65,8 @@ function SongCard({
   onPlay: () => void
 }) {
   const { t } = useI18n()
-  const coverUrl = song.coverArt?.cloudflareId
-    ? getThumbnailUrl(song.coverArt.cloudflareId)
-    : undefined
+  // 使用辅助函数获取封面 URL
+  const coverUrl = getSongCoverUrl(song.coverArt, song.thumbnailArt)
 
   const artists = song.coverArtists?.join(', ') || song.originalArtists?.join(', ') || t('song.unknownArtist')
 
@@ -214,7 +236,7 @@ export function Search() {
         setPage(pageNum)
       }
     } catch (error) {
-      console.error('搜索失败:', error)
+      console.error('[Search] Search failed:', error)
     } finally {
       setLoading(false)
     }

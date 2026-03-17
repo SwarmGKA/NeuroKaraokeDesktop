@@ -6,12 +6,12 @@ const MAX_HISTORY = 10
 export function useSearchHistory() {
   const [history, setHistory] = useState<string[]>([])
 
-  // 初始化时从存储加载历史
+  // Load history from storage on init
   useEffect(() => {
     loadHistory()
   }, [])
 
-  // 加载搜索历史
+  // Load search history
   const loadHistory = async () => {
     try {
       const saved = await window.electronAPI.storeGet(STORAGE_KEY)
@@ -19,11 +19,11 @@ export function useSearchHistory() {
         setHistory(saved)
       }
     } catch (error) {
-      console.error('加载搜索历史失败:', error)
+      console.error('[SearchHistory] Failed to load:', error)
     }
   }
 
-  // 添加搜索词到历史
+  // Add search term to history
   const addHistory = useCallback(async (query: string) => {
     if (!query.trim()) return
 
@@ -36,28 +36,28 @@ export function useSearchHistory() {
     try {
       await window.electronAPI.storeSet(STORAGE_KEY, newHistory)
     } catch (error) {
-      console.error('保存搜索历史失败:', error)
+      console.error('[SearchHistory] Failed to save:', error)
     }
   }, [history])
 
-  // 删除单条历史
+  // Remove single history item
   const removeHistory = useCallback(async (query: string) => {
     const newHistory = history.filter(item => item !== query)
     setHistory(newHistory)
     try {
       await window.electronAPI.storeSet(STORAGE_KEY, newHistory)
     } catch (error) {
-      console.error('删除搜索历史失败:', error)
+      console.error('[SearchHistory] Failed to remove:', error)
     }
   }, [history])
 
-  // 清空历史
+  // Clear all history
   const clearHistory = useCallback(async () => {
     setHistory([])
     try {
       await window.electronAPI.storeSet(STORAGE_KEY, [])
     } catch (error) {
-      console.error('清空搜索历史失败:', error)
+      console.error('[SearchHistory] Failed to clear:', error)
     }
   }, [])
 
