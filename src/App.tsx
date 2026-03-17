@@ -32,6 +32,7 @@ import { createAppTheme } from './theme'
 import { useThemeStore, BaseTheme, AccentTheme } from './hooks/useThemeStore'
 import { HomeDataProvider } from './stores/homeDataStore'
 import { PlayerProvider } from './stores/playerStore'
+import { SearchProvider } from './stores/searchStore'
 
 const STORAGE_KEY = 'sidebar-collapsed'
 
@@ -167,7 +168,7 @@ function AppContent() {
           }}
         >
           <Flex vertical style={{ height: '100%' }}>
-            <TitleBar baseTheme={baseTheme} accentColor={accentColor} />
+            <TitleBar baseTheme={baseTheme} accentColor={accentColor} onNavigateToSearch={() => handlePageChange('search')} />
 
             <Flex flex={1} style={{ overflow: 'hidden' }}>
               <Flex vertical>
@@ -234,7 +235,9 @@ function App() {
     <I18nProvider>
       <HomeDataProvider>
         <PlayerProvider>
-          <AppContent />
+          <SearchProvider>
+            <AppContent />
+          </SearchProvider>
         </PlayerProvider>
       </HomeDataProvider>
     </I18nProvider>

@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Typography, Flex, Tag, Card } from 'antd'
 import { HistoryOutlined, CloseOutlined, FireOutlined } from '@ant-design/icons'
-import { useSearchParams } from 'react-router-dom'
 import { useI18n } from '../i18n'
 import { useHomeData } from '../stores/homeDataStore'
 import { useSearchHistory } from '../hooks/useSearchHistory'
+import { useSearchState } from '../stores/searchStore'
 import { FilterPanel } from '../components/search/FilterPanel'
 import { SongCardGrid } from '../components/search/SongCardGrid'
 import { RelatedSidebar } from '../components/search/RelatedSidebar'
@@ -42,15 +42,11 @@ const RECOMMEND_TAGS_EN = [
 
 export function Search() {
   const { t, language } = useI18n()
-  const [searchParams, setSearchParams] = useSearchParams()
   const { artists } = useHomeData()
   const { history, addHistory, removeHistory, clearHistory } = useSearchHistory()
-
-  // 从 URL 获取搜索词
-  const urlQuery = searchParams.get('q') || ''
+  const { searchState, performSearch } = useSearchState()
 
   // 状态
-  const [query, setQuery] = useState(urlQuery)
   const [results, setResults] = useState<SongListItem[]>([])
   const [totalCount, setTotalCount] = useState(0)
   const [page, setPage] = useState(0)
@@ -66,15 +62,17 @@ export function Search() {
   const [musicalKey, setMusicalKey] = useState<string | null>(null)
 
   const pageSize = 20
-  const isDark = true // 简化处理，实际应从主题上下文获取
+  const isDark = true
 
   const hotSearches = language === 'zh' ? HOT_SEARCHES_ZH : HOT_SEARCHES_EN
   const recommendTags = language === 'zh' ? RECOMMEND_TAGS_ZH : RECOMMEND_TAGS_EN
 
-  // 相关艺术家（基于搜索结果）
+  // 当前搜索词
+  const query = searchState.query
+
+  // 相关艺术家
   const relatedArtists = useMemo(() => {
     if (results.length === 0) return []
-    // 返回随机几个艺术家
     return artists.slice(0, 5)
   }, [results, artists])
 
@@ -121,14 +119,13 @@ export function Search() {
     }
   }, [selectedArtists, selectedGenres, selectedMoods, selectedThemes, energyLevel, musicalKey])
 
-  // 初始加载和查询变化时搜索
+  // 搜索状态变化时触发搜索
   useEffect(() => {
-    if (urlQuery) {
-      setQuery(urlQuery)
-      addHistory(urlQuery)
-      searchSongs(urlQuery, 0, true)
+    if (query && searchState.timestamp > 0) {
+      addHistory(query)
+      searchSongs(query, 0, true)
     }
-  }, [urlQuery])
+  }, [searchState.timestamp])
 
   // 筛选变化时重新搜索
   useEffect(() => {
@@ -146,25 +143,22 @@ export function Search() {
 
   // 点击热门搜索
   const handleHotSearchClick = (keyword: string) => {
-    setQuery(keyword)
     addHistory(keyword)
-    setSearchParams({ q: keyword })
+    performSearch(keyword)
   }
 
   // 点击历史记录
   const handleHistoryClick = (keyword: string) => {
-    setQuery(keyword)
-    setSearchParams({ q: keyword })
+    performSearch(keyword)
   }
 
   // 点击推荐标签
   const handleTagClick = (tagName: string) => {
-    setQuery(tagName)
     addHistory(tagName)
-    setSearchParams({ q: tagName })
+    performSearch(tagName)
   }
 
-  // 渲染默认状态（无搜索词）
+  // 渲染默认状态
   const renderDefaultState = () => (
     <div style={{ padding: 24 }}>
       {/* 热门搜索 */}
