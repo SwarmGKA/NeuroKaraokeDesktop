@@ -1,16 +1,16 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import type { Playlist, TrendingSong, RadioState, Artist, CoverArt } from '../types/api'
 
-// 全局封面缓存（songId -> coverArt）
+// Global cover art cache (songId -> coverArt)
 const coverArtCache = new Map<string, CoverArt>()
 
-// 获取封面缓存
+// Get cover art from cache
 export function getCoverArtFromCache(songId: string | undefined): CoverArt | undefined {
   if (!songId) return undefined
   return coverArtCache.get(songId)
 }
 
-// 更新封面缓存
+// Update cover art cache
 export function updateCoverArtCache(songs: TrendingSong[]) {
   songs.forEach(song => {
     if (song.id && song.coverArt) {
@@ -110,7 +110,7 @@ export function HomeDataProvider({ children }: { children: React.ReactNode }) {
       const result = await window.electronAPI.getOfficialPlaylists(0, 20, currentYear)
       setOfficialPlaylists(result || [])
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '获取推荐歌单失败'
+      const errorMessage = err instanceof Error ? err.message : 'Failed to refresh playlists'
       setPlaylistsError(errorMessage)
       console.error('[HomeData] Failed to refresh playlists:', err)
     } finally {
@@ -146,7 +146,7 @@ export function HomeDataProvider({ children }: { children: React.ReactNode }) {
       const result = await window.electronAPI.getRadioCurrentState()
       setRadioState(result)
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '获取电台状态失败'
+      const errorMessage = err instanceof Error ? err.message : 'Failed to refresh radio'
       setRadioError(errorMessage)
       console.error('[HomeData] Failed to refresh radio:', err)
     } finally {
@@ -162,7 +162,7 @@ export function HomeDataProvider({ children }: { children: React.ReactNode }) {
       const result = await window.electronAPI.getAllArtists()
       setArtists(result || [])
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '获取艺术家列表失败'
+      const errorMessage = err instanceof Error ? err.message : 'Failed to refresh artists'
       setArtistsError(errorMessage)
       console.error('[HomeData] Failed to refresh artists:', err)
     } finally {
@@ -205,6 +205,11 @@ export function HomeDataProvider({ children }: { children: React.ReactNode }) {
           setTrendingLoading(false)
           setRadioLoading(false)
           setIsInitialized(true)
+
+          // Update cover art cache from trending songs
+          if (trendingResult) {
+            updateCoverArtCache(trendingResult)
+          }
 
           const endTime = performance.now()
           console.log(`[HomeData] Preload complete in ${(endTime - startTime).toFixed(0)}ms`)

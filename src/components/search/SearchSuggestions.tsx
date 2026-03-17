@@ -1,33 +1,73 @@
 import { useState, useEffect } from 'react'
 import { Typography, Flex, Empty, Skeleton } from 'antd'
 import { SearchOutlined, HistoryOutlined, PlayCircleOutlined, CloseOutlined, UserOutlined } from '@ant-design/icons'
-import { useHomeData, getThumbnailUrl } from '../../stores/homeDataStore'
+import { useHomeData, getThumbnailUrl, getCoverArtFromCache } from '../../stores/homeDataStore'
 import { useI18n } from '../../i18n'
 import type { SongListItem, Artist, CoverArt } from '../../types/api'
 
 const { Text } = Typography
 
-// 存储服务 URL
+// Storage URL
 const STORAGE_URL = 'https://storage.neurokaraoke.com'
 
-// 获取封面 URL 的辅助函数
-function getSongCoverUrl(coverArt: CoverArt | undefined, thumbnailArt: CoverArt | undefined): string | undefined {
-  // 优先使用 cloudflareId
-  const cloudflareId = coverArt?.cloudflareId || thumbnailArt?.cloudflareId
-  if (cloudflareId) {
-    return getThumbnailUrl(cloudflareId)
-  }
+// Cover art cache (songId -> coverArt)
+const coverArtCache = new Map<string, CoverArt>()
+const pendingFetches = new Set<string>()
 
-  // 尝试使用 absolutePath
-  const absolutePath = coverArt?.absolutePath || thumbnailArt?.absolutePath
-  if (absolutePath) {
-    if (absolutePath.startsWith('http')) {
-      return absolutePath
+// Get cover URL helper with lazy loading
+function useSongCoverUrl(song: SongListItem): string | undefined {
+  const [coverUrl, setCoverUrl] = useState<string | undefined>(() => {
+    // Try existing cache
+    const cached = getCoverArtFromCache(song.id) || coverArtCache.get(song.id || '')
+    if (cached?.cloudflareId) {
+      return getThumbnailUrl(cached.cloudflareId)
     }
-    return `${STORAGE_URL}${absolutePath.startsWith('/') ? '' : '/'}${absolutePath}`
-  }
+    if (cached?.absolutePath) {
+      const path = cached.absolutePath
+      if (path.startsWith('http')) return path
+      return `${STORAGE_URL}${path.startsWith('/') ? '' : '/'}${path}`
+    }
+    // Try song's own coverArt/thumbnailArt
+    const cloudflareId = song.coverArt?.cloudflareId || song.thumbnailArt?.cloudflareId
+    if (cloudflareId) {
+      return getThumbnailUrl(cloudflareId)
+    }
+    return undefined
+  })
 
-  return undefined
+  useEffect(() => {
+    if (coverUrl || !song.id || pendingFetches.has(song.id)) return
+
+    // Check if already cached
+    const cached = getCoverArtFromCache(song.id) || coverArtCache.get(song.id)
+    if (cached?.cloudflareId) {
+      setCoverUrl(getThumbnailUrl(cached.cloudflareId))
+      return
+    }
+
+    // Fetch song details for cover art
+    pendingFetches.add(song.id)
+    window.electronAPI.getSongDetails(song.id).then(details => {
+      pendingFetches.delete(song.id)
+      if (details?.coverArt) {
+        coverArtCache.set(song.id!, details.coverArt)
+        if (details.coverArt.cloudflareId) {
+          setCoverUrl(getThumbnailUrl(details.coverArt.cloudflareId))
+        } else if (details.coverArt.absolutePath) {
+          const path = details.coverArt.absolutePath
+          if (path.startsWith('http')) {
+            setCoverUrl(path)
+          } else {
+            setCoverUrl(`${STORAGE_URL}${path.startsWith('/') ? '' : '/'}${path}`)
+          }
+        }
+      }
+    }).catch(() => {
+      pendingFetches.delete(song.id)
+    })
+  }, [song.id, coverUrl])
+
+  return coverUrl
 }
 
 interface SearchSuggestionsProps {
@@ -36,11 +76,11 @@ interface SearchSuggestionsProps {
   isDark: boolean
   onSelectSuggestion: (suggestion: string) => void
   onRemoveHistory: (query: string) => void
-  onPlaySong: () => void
+  onPlaySongDirectly: (song: SongListItem, allSongs: SongListItem[]) => void
   onClose: () => void
 }
 
-// 骨架项组件
+// Skeleton item
 function SkeletonItem() {
   return (
     <Flex align="center" gap={12} style={{ padding: '8px 16px' }}>
@@ -53,20 +93,17 @@ function SkeletonItem() {
   )
 }
 
-// 歌曲搜索建议项
+// Song suggestion item
 function SongSuggestionItem({
   song,
   isDark,
-  onClick,
   onPlay,
 }: {
   song: SongListItem
   isDark: boolean
-  onClick: () => void
   onPlay: () => void
 }) {
-  // 使用辅助函数获取封面 URL
-  const coverUrl = getSongCoverUrl(song.coverArt, song.thumbnailArt)
+  const coverUrl = useSongCoverUrl(song)
 
   const artists = song.coverArtists?.join(', ') || song.originalArtists?.join(', ')
 
@@ -75,7 +112,7 @@ function SongSuggestionItem({
       align="center"
       gap={12}
       className="suggestion-item"
-      onClick={onClick}
+      onClick={onPlay}
       style={{
         padding: '8px 16px',
         cursor: 'pointer',
@@ -83,7 +120,7 @@ function SongSuggestionItem({
         transition: 'background 0.2s',
       }}
     >
-      {/* 封面 */}
+      {/* Cover */}
       <div
         style={{
           width: 40,
@@ -108,7 +145,7 @@ function SongSuggestionItem({
         )}
       </div>
 
-      {/* 信息 */}
+      {/* Info */}
       <Flex vertical flex={1} style={{ minWidth: 0 }}>
         <Text
           ellipsis
@@ -130,19 +167,15 @@ function SongSuggestionItem({
         )}
       </Flex>
 
-      {/* 播放按钮 */}
+      {/* Play icon hint */}
       <PlayCircleOutlined
-        onClick={(e) => {
-          e.stopPropagation()
-          onPlay()
-        }}
         style={{ fontSize: 20, color: isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)' }}
       />
     </Flex>
   )
 }
 
-// 艺术家建议项
+// Artist suggestion item
 function ArtistSuggestionItem({
   artist,
   isDark,
@@ -169,7 +202,7 @@ function ArtistSuggestionItem({
         transition: 'background 0.2s',
       }}
     >
-      {/* 头像 */}
+      {/* Avatar */}
       <div
         style={{
           width: 40,
@@ -194,7 +227,7 @@ function ArtistSuggestionItem({
         )}
       </div>
 
-      {/* 名称 */}
+      {/* Name */}
       <Flex vertical flex={1} style={{ minWidth: 0 }}>
         <Text
           ellipsis
@@ -207,7 +240,7 @@ function ArtistSuggestionItem({
         </Text>
         {artist.songCount && (
           <Text type="secondary" style={{ fontSize: 12 }}>
-            {artist.songCount} 首歌曲
+            {artist.songCount} songs
           </Text>
         )}
       </Flex>
@@ -215,7 +248,7 @@ function ArtistSuggestionItem({
   )
 }
 
-// 历史记录项
+// History item
 function HistoryItem({
   query,
   isDark,
@@ -264,7 +297,7 @@ export function SearchSuggestions({
   isDark,
   onSelectSuggestion,
   onRemoveHistory,
-  onPlaySong,
+  onPlaySongDirectly,
   onClose: _onClose,
 }: SearchSuggestionsProps) {
   const { t } = useI18n()
@@ -273,7 +306,7 @@ export function SearchSuggestions({
   const [songResults, setSongResults] = useState<SongListItem[]>([])
   const [artistResults, setArtistResults] = useState<Artist[]>([])
 
-  // 搜索歌曲
+  // Search songs
   useEffect(() => {
     if (!query.trim()) {
       setSongResults([])
@@ -281,12 +314,12 @@ export function SearchSuggestions({
       return
     }
 
-    // 立即设置 loading 状态
+    // Set loading immediately
     setLoading(true)
 
     const searchSuggestions = async () => {
       try {
-        // 搜索歌曲
+        // Search songs using POST API
         const songResponse = await window.electronAPI.searchSongs({
           search: query,
           page: 0,
@@ -294,13 +327,12 @@ export function SearchSuggestions({
         })
         setSongResults(songResponse?.items || [])
 
-        // 搜索艺术家（本地过滤）
+        // Search artists (local filter)
         const queryLower = query.toLowerCase()
         const searchTerms = queryLower.split(/\s+/).filter(Boolean)
         const filteredArtists = artists
           .filter(a => {
             const nameLower = a.name?.toLowerCase() || ''
-            // 匹配任意一个关键词
             return searchTerms.some(term => nameLower.includes(term))
           })
           .slice(0, 5)
@@ -344,7 +376,7 @@ export function SearchSuggestions({
       }}
     >
       {loading ? (
-        // 显示骨架屏
+        // Show skeleton
         <div>
           <Text
             type="secondary"
@@ -363,7 +395,7 @@ export function SearchSuggestions({
           ))}
         </div>
       ) : showHistory ? (
-        // 显示搜索历史
+        // Show history
         <div>
           <Text
             type="secondary"
@@ -388,9 +420,9 @@ export function SearchSuggestions({
           ))}
         </div>
       ) : hasResults ? (
-        // 显示搜索结果
+        // Show search results
         <div>
-          {/* 歌曲结果 */}
+          {/* Song results */}
           {songResults.length > 0 && (
             <div>
               <Text
@@ -410,14 +442,13 @@ export function SearchSuggestions({
                   key={song.id}
                   song={song}
                   isDark={isDark}
-                  onClick={() => onSelectSuggestion(song.title || '')}
-                  onPlay={onPlaySong}
+                  onPlay={() => onPlaySongDirectly(song, songResults)}
                 />
               ))}
             </div>
           )}
 
-          {/* 艺术家结果 */}
+          {/* Artist results */}
           {artistResults.length > 0 && (
             <div>
               <Text
@@ -444,7 +475,7 @@ export function SearchSuggestions({
           )}
         </div>
       ) : query.trim() ? (
-        // 无结果
+        // No results
         <Empty
           image={Empty.PRESENTED_IMAGE_SIMPLE}
           description={t('search.noResults')}
@@ -452,8 +483,8 @@ export function SearchSuggestions({
         />
       ) : null}
 
-      {/* 底部提示 */}
-      {(hasResults || showHistory) && (
+      {/* Bottom hint */}
+      {(hasResults || showHistory) && !loading && (
         <Flex
           justify="center"
           style={{

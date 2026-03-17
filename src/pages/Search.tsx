@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Typography, Flex, Tag, Select, Skeleton, Empty, Button, Card } from 'antd'
 import { HistoryOutlined, FireOutlined, PlayCircleOutlined } from '@ant-design/icons'
 import { useI18n } from '../i18n'
-import { useHomeData, getThumbnailUrl } from '../stores/homeDataStore'
+import { useHomeData, getThumbnailUrl, getCoverArtFromCache } from '../stores/homeDataStore'
 import { useSearchHistory } from '../hooks/useSearchHistory'
 import { useSearchState } from '../stores/searchStore'
 import { usePlayer } from '../stores/playerStore'
@@ -11,30 +11,70 @@ import '../components/search/Search.css'
 
 const { Title, Text } = Typography
 
-// 存储服务 URL
+// Storage URL
 const STORAGE_URL = 'https://storage.neurokaraoke.com'
 
-// 获取封面 URL 的辅助函数
-function getSongCoverUrl(coverArt: CoverArt | undefined, thumbnailArt: CoverArt | undefined): string | undefined {
-  // 优先使用 cloudflareId
-  const cloudflareId = coverArt?.cloudflareId || thumbnailArt?.cloudflareId
-  if (cloudflareId) {
-    return getThumbnailUrl(cloudflareId)
-  }
+// Cover art cache (songId -> coverArt)
+const coverArtCache = new Map<string, CoverArt>()
+const pendingFetches = new Set<string>()
 
-  // 尝试使用 absolutePath
-  const absolutePath = coverArt?.absolutePath || thumbnailArt?.absolutePath
-  if (absolutePath) {
-    if (absolutePath.startsWith('http')) {
-      return absolutePath
+// Get cover URL helper with lazy loading
+function useSongCoverUrl(song: SongListItem): string | undefined {
+  const [coverUrl, setCoverUrl] = useState<string | undefined>(() => {
+    // Try existing cache
+    const cached = getCoverArtFromCache(song.id) || coverArtCache.get(song.id || '')
+    if (cached?.cloudflareId) {
+      return getThumbnailUrl(cached.cloudflareId)
     }
-    return `${STORAGE_URL}${absolutePath.startsWith('/') ? '' : '/'}${absolutePath}`
-  }
+    if (cached?.absolutePath) {
+      const path = cached.absolutePath
+      if (path.startsWith('http')) return path
+      return `${STORAGE_URL}${path.startsWith('/') ? '' : '/'}${path}`
+    }
+    // Try song's own coverArt/thumbnailArt
+    const cloudflareId = song.coverArt?.cloudflareId || song.thumbnailArt?.cloudflareId
+    if (cloudflareId) {
+      return getThumbnailUrl(cloudflareId)
+    }
+    return undefined
+  })
 
-  return undefined
+  useEffect(() => {
+    if (coverUrl || !song.id || pendingFetches.has(song.id)) return
+
+    // Check if already cached
+    const cached = getCoverArtFromCache(song.id) || coverArtCache.get(song.id)
+    if (cached?.cloudflareId) {
+      setCoverUrl(getThumbnailUrl(cached.cloudflareId))
+      return
+    }
+
+    // Fetch song details for cover art
+    pendingFetches.add(song.id)
+    window.electronAPI.getSongDetails(song.id).then(details => {
+      pendingFetches.delete(song.id)
+      if (details?.coverArt) {
+        coverArtCache.set(song.id!, details.coverArt)
+        if (details.coverArt.cloudflareId) {
+          setCoverUrl(getThumbnailUrl(details.coverArt.cloudflareId))
+        } else if (details.coverArt.absolutePath) {
+          const path = details.coverArt.absolutePath
+          if (path.startsWith('http')) {
+            setCoverUrl(path)
+          } else {
+            setCoverUrl(`${STORAGE_URL}${path.startsWith('/') ? '' : '/'}${path}`)
+          }
+        }
+      }
+    }).catch(() => {
+      pendingFetches.delete(song.id)
+    })
+  }, [song.id, coverUrl])
+
+  return coverUrl
 }
 
-// 热门搜索词
+// Hot searches
 const HOT_SEARCHES_ZH = ['Neuro', 'Evil', 'Vedal', 'duet', 'cover', 'karaoke']
 const HOT_SEARCHES_EN = ['Neuro', 'Evil', 'Vedal', 'duet', 'cover', 'karaoke']
 
@@ -56,7 +96,7 @@ function songListItemToSong(item: SongListItem): Song {
   }
 }
 
-// 横向歌曲卡片组件（参考 TrendingSongCard 样式）
+// Horizontal song card (matching TrendingSongCard style)
 function SongCard({
   song,
   onPlay,
@@ -65,8 +105,7 @@ function SongCard({
   onPlay: () => void
 }) {
   const { t } = useI18n()
-  // 使用辅助函数获取封面 URL
-  const coverUrl = getSongCoverUrl(song.coverArt, song.thumbnailArt)
+  const coverUrl = useSongCoverUrl(song)
 
   const artists = song.coverArtists?.join(', ') || song.originalArtists?.join(', ') || t('song.unknownArtist')
 

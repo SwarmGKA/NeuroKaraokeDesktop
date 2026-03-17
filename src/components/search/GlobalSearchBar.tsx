@@ -1,13 +1,33 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { Input, Typography } from 'antd'
 import { SearchOutlined } from '@ant-design/icons'
 import { useI18n } from '../../i18n'
 import { useSearchHistory } from '../../hooks/useSearchHistory'
 import { useSearchState } from '../../stores/searchStore'
+import { usePlayer } from '../../stores/playerStore'
 import { SearchSuggestions } from './SearchSuggestions'
+import type { SongListItem, Song } from '../../types/api'
 import './Search.css'
 
 const { Text } = Typography
+
+// Convert SongListItem to Song format
+function songListItemToSong(item: SongListItem): Song {
+  return {
+    id: item.id,
+    title: item.title,
+    absolutePath: item.absolutePath,
+    duration: item.duration,
+    playCount: item.playCount,
+    streamDate: item.streamDate,
+    dateAdded: item.dateAdded,
+    coverArtists: item.coverArtists?.map(name => ({ name })),
+    originalArtists: item.originalArtists?.map(name => ({ name })),
+    coverArt: item.coverArt,
+    hls: item.hls,
+    hasLyrics: item.hasLyrics,
+  }
+}
 
 interface GlobalSearchBarProps {
   isDark: boolean
@@ -20,11 +40,12 @@ export function GlobalSearchBar({ isDark, onNavigateToSearch }: GlobalSearchBarP
   const containerRef = useRef<HTMLDivElement>(null)
   const { history, addHistory, removeHistory } = useSearchHistory()
   const { performSearch } = useSearchState()
+  const { playSong } = usePlayer()
 
   const [query, setQuery] = useState('')
   const [showSuggestions, setShowSuggestions] = useState(false)
 
-  // 快捷键 Ctrl+K 聚焦搜索框
+  // Keyboard shortcut Ctrl+K to focus search
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
@@ -40,7 +61,7 @@ export function GlobalSearchBar({ isDark, onNavigateToSearch }: GlobalSearchBarP
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
 
-  // 点击外部关闭建议浮层
+  // Close suggestions when clicking outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
@@ -80,9 +101,15 @@ export function GlobalSearchBar({ isDark, onNavigateToSearch }: GlobalSearchBarP
     onNavigateToSearch()
   }
 
-  const handlePlaySong = () => {
+  // Play song directly when clicked in suggestions
+  const handlePlaySongDirectly = useCallback((song: SongListItem, allSongs: SongListItem[]) => {
+    const songs = allSongs.map(s => songListItemToSong(s))
+    const currentSong = songListItemToSong(song)
+    const index = allSongs.findIndex(s => s.id === song.id)
+    playSong(currentSong, songs, index >= 0 ? index : 0)
     setShowSuggestions(false)
-  }
+    inputRef.current?.blur()
+  }, [playSong])
 
   return (
     <div ref={containerRef} className="global-search-container">
@@ -112,7 +139,7 @@ export function GlobalSearchBar({ isDark, onNavigateToSearch }: GlobalSearchBarP
           isDark={isDark}
           onSelectSuggestion={handleSelectSuggestion}
           onRemoveHistory={removeHistory}
-          onPlaySong={handlePlaySong}
+          onPlaySongDirectly={handlePlaySongDirectly}
           onClose={() => setShowSuggestions(false)}
         />
       )}
