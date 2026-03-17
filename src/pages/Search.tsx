@@ -50,11 +50,12 @@ function useSongCoverUrl(song: SongListItem): string | undefined {
     }
 
     // Fetch song details for cover art
-    pendingFetches.add(song.id)
-    window.electronAPI.getSongDetails(song.id).then(details => {
-      pendingFetches.delete(song.id)
+    const songId = song.id
+    pendingFetches.add(songId)
+    window.electronAPI.getSongDetails(songId).then(details => {
+      pendingFetches.delete(songId)
       if (details?.coverArt) {
-        coverArtCache.set(song.id!, details.coverArt)
+        coverArtCache.set(songId, details.coverArt)
         if (details.coverArt.cloudflareId) {
           setCoverUrl(getThumbnailUrl(details.coverArt.cloudflareId))
         } else if (details.coverArt.absolutePath) {
@@ -67,7 +68,7 @@ function useSongCoverUrl(song: SongListItem): string | undefined {
         }
       }
     }).catch(() => {
-      pendingFetches.delete(song.id)
+      pendingFetches.delete(songId)
     })
   }, [song.id, coverUrl])
 
