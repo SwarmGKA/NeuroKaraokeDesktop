@@ -12,7 +12,9 @@ interface SongItemProps {
   song: SongListItem | TrendingSong | Song | DownloadedSong
   // 封面 URL
   coverUrl?: string
-  // 艺术家
+  // 显示名称（优先使用，格式：歌名 - 原作者名）
+  displayName?: string
+  // 艺术家（封面艺术家）
   artists?: string
   // 是否正在播放
   isPlaying?: boolean
@@ -38,6 +40,7 @@ function formatFileSize(bytes: number): string {
 export function SongItem({
   song,
   coverUrl,
+  displayName,
   artists,
   isPlaying = false,
   onPlay,
@@ -49,9 +52,12 @@ export function SongItem({
   const { t } = useI18n()
   const { downloadSong, isDownloaded, getDownloadState, deleteDownload } = useDownloadStore()
 
-  // 获取歌曲 ID
+  // 获取歌曲 ID 和标题
   const songId = 'id' in song ? song.id : undefined
   const title = 'title' in song ? song.title : 'Unknown'
+
+  // 显示名称：优先使用传入的 displayName，否则显示 title
+  const displayTitle = displayName || title
 
   // 获取下载状态
   const downloadState = getDownloadState(songId)
@@ -168,7 +174,7 @@ export function SongItem({
           {coverUrl ? (
             <img
               src={coverUrl}
-              alt={title || ''}
+              alt={displayTitle || ''}
               loading="lazy"
               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             />
@@ -211,7 +217,7 @@ export function SongItem({
               color: isPlaying ? '#667eea' : undefined,
             }}
           >
-            {title || t('song.defaultTitle')}
+            {displayTitle || t('song.defaultTitle')}
           </Text>
           {artists && (
             <Text type="secondary" ellipsis style={{ fontSize: 12 }}>

@@ -34,6 +34,14 @@ function trendingSongToSong(song: TrendingSong): Song {
   }
 }
 
+// 生成显示名称：歌名 - 原作者名
+function getDisplayName(title: string | undefined, originalArtists: string[] | undefined): string {
+  if (originalArtists && originalArtists.length > 0) {
+    return `${title || 'Unknown'} - ${originalArtists.join(', ')}`
+  }
+  return title || 'Unknown'
+}
+
 // 单个歌曲卡片
 function TrendingSongCard({
   song,
@@ -60,7 +68,10 @@ function TrendingSongCard({
     ? getThumbnailUrl(song.coverArt.cloudflareId)
     : undefined
 
-  const artists = song.coverArtists?.join(', ') || song.originalArtists?.join(', ') || unknownArtistText
+  // 显示格式：歌名 - 原作者名
+  const displayName = getDisplayName(song.title, song.originalArtists)
+  // 封面艺术家作为次要信息显示
+  const coverArtists = song.coverArtists?.join(', ')
   const { downloadSong, isDownloaded, getDownloadState } = useDownloadStore()
 
   const songId = song.id
@@ -191,14 +202,14 @@ function TrendingSongCard({
               ellipsis
               style={{ fontWeight: 500, fontSize: 14 }}
             >
-              {song.title || defaultTitleText}
+              {displayName || defaultTitleText}
             </Text>
             <Text
               ellipsis
               type="secondary"
               style={{ fontSize: 12, marginTop: 2 }}
             >
-              {artists}
+              {coverArtists || unknownArtistText}
             </Text>
           </Flex>
 

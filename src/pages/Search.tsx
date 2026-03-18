@@ -80,6 +80,14 @@ function useSongCoverUrl(song: SongListItem): string | undefined {
 const HOT_SEARCHES_ZH = ['Neuro', 'Evil', 'Vedal', 'duet', 'cover', 'karaoke']
 const HOT_SEARCHES_EN = ['Neuro', 'Evil', 'Vedal', 'duet', 'cover', 'karaoke']
 
+// 生成显示名称：歌名 - 原作者名
+function getDisplayName(title: string | undefined, originalArtists: string[] | undefined): string {
+  if (originalArtists && originalArtists.length > 0) {
+    return `${title || 'Unknown'} - ${originalArtists.join(', ')}`
+  }
+  return title || 'Unknown'
+}
+
 // 将 SongListItem 转换为 Song 格式
 function songListItemToSong(item: SongListItem): Song {
   return {
@@ -106,17 +114,20 @@ function SongCard({
   song: SongListItem
   onPlay: () => void
 }) {
-  const { t } = useI18n()
   const coverUrl = useSongCoverUrl(song)
 
-  const artists = song.coverArtists?.join(', ') || song.originalArtists?.join(', ') || t('song.unknownArtist')
+  // 显示格式：歌名 - 原作者名
+  const displayName = getDisplayName(song.title, song.originalArtists)
+  // 封面艺术家作为次要信息显示
+  const coverArtists = song.coverArtists?.join(', ')
   const hasAudio = !!(song.absolutePath || song.hls)
 
   return (
     <SongItem
       song={song}
       coverUrl={coverUrl}
-      artists={artists}
+      displayName={displayName}
+      artists={coverArtists}
       onPlay={onPlay}
       showDownload={true}
       canDownload={hasAudio}

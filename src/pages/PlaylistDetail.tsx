@@ -10,11 +10,20 @@ import type { SongListDTO, PlaylistSong } from '../types/api'
 
 const { Title, Text } = Typography
 
+// 生成显示名称：歌名 - 原作者名
+function getDisplayName(title: string | undefined, originalArtists: string | undefined): string {
+  if (originalArtists) {
+    return `${title || 'Unknown'} - ${originalArtists}`
+  }
+  return title || 'Unknown'
+}
+
 // 统一的歌曲项组件
 function SongItem({
   title,
   coverUrl,
   artists,
+  originalArtists,
   index,
   onPlay,
   isPlaying,
@@ -26,6 +35,7 @@ function SongItem({
   title?: string
   coverUrl?: string
   artists?: string
+  originalArtists?: string
   index: number
   onPlay: () => void
   isPlaying: boolean
@@ -35,6 +45,9 @@ function SongItem({
   downloadedText: string
 }) {
   const { downloadSong, isDownloaded, getDownloadState } = useDownloadStore()
+
+  // 显示名称：歌名 - 原作者名
+  const displayName = getDisplayName(title, originalArtists)
 
   const alreadyDownloaded = isDownloaded(songId)
   const downloadState = getDownloadState(songId)
@@ -49,6 +62,8 @@ function SongItem({
         id: songId,
         title: title,
         absolutePath: undefined, // 这个信息在 PlaylistDetail 中不可用
+        originalArtists: originalArtists ? [originalArtists] : undefined,
+        coverArtists: artists ? [artists] : undefined,
       } as any)
     }
   }
@@ -164,7 +179,7 @@ function SongItem({
                 color: isPlaying ? '#667eea' : undefined,
               }}
             >
-              {title || '未知歌曲'}
+              {displayName}
             </Text>
             {artists && (
               <Text type="secondary" ellipsis style={{ fontSize: 12 }}>
@@ -240,12 +255,22 @@ export function PlaylistDetail({ onBack }: PlaylistDetailProps) {
   const getSongArtists = (song: SongListDTO | PlaylistSong, isIdkFormat: boolean): string | undefined => {
     if (isIdkFormat) {
       const s = song as PlaylistSong
-      return s.coverArtists || s.originalArtists
+      return s.coverArtists
     }
     const dto = song as SongListDTO
     if (dto.coverArtists?.length) {
       return dto.coverArtists.join(', ')
     }
+    return undefined
+  }
+
+  // 获取原唱艺术家
+  const getSongOriginalArtists = (song: SongListDTO | PlaylistSong, isIdkFormat: boolean): string | undefined => {
+    if (isIdkFormat) {
+      const s = song as PlaylistSong
+      return s.originalArtists
+    }
+    const dto = song as SongListDTO
     if (dto.originalArtists?.length) {
       return dto.originalArtists.join(', ')
     }
@@ -418,6 +443,7 @@ export function PlaylistDetail({ onBack }: PlaylistDetailProps) {
             const title = song.title
             const songCoverUrl = getSongCoverUrl(song, useIdkFormat)
             const artists = getSongArtists(song, useIdkFormat)
+            const originalArtists = getSongOriginalArtists(song, useIdkFormat)
             const isPlaying = state.currentSong?.title === title && state.isPlaying
             const songId = useIdkFormat ? undefined : (song as SongListDTO).id
             const hasAudio = useIdkFormat ? !!(song as PlaylistSong).audioUrl : !!(song as SongListDTO).absolutePath || !!(song as SongListDTO).hls
@@ -428,6 +454,7 @@ export function PlaylistDetail({ onBack }: PlaylistDetailProps) {
                 title={title}
                 coverUrl={songCoverUrl}
                 artists={artists}
+                originalArtists={originalArtists}
                 index={index}
                 onPlay={() => playSongAtIndex(index)}
                 isPlaying={isPlaying}
