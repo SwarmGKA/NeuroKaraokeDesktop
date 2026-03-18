@@ -8,7 +8,7 @@ const { Title, Text } = Typography
 
 export function Downloads() {
   const { t } = useI18n()
-  const { downloads, isLoading, deleteDownload } = useDownloadStore()
+  const { downloads, deleteDownload } = useDownloadStore()
   const { playSong, state } = usePlayer()
 
   // 播放已下载的歌曲
@@ -41,9 +41,7 @@ export function Downloads() {
       </div>
 
       {/* 下载列表 */}
-      {isLoading ? (
-        <Text type="secondary">{t('app.loading')}</Text>
-      ) : downloads.length === 0 ? (
+      {downloads.length === 0 ? (
         <Empty
           image={Empty.PRESENTED_IMAGE_SIMPLE}
           description={t('downloads.empty')}

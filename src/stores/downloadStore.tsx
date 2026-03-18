@@ -25,8 +25,6 @@ interface DownloadStoreState {
   downloads: DownloadedSong[]
   // 下载中状态
   downloadingMap: Map<string, DownloadState>
-  // 加载状态
-  isLoading: boolean
 }
 
 // Store 方法
@@ -52,23 +50,29 @@ const DownloadStoreContext = createContext<DownloadStoreContextType | null>(null
 export function DownloadStoreProvider({ children }: { children: React.ReactNode }) {
   const [downloads, setDownloads] = useState<DownloadedSong[]>([])
   const [downloadingMap, setDownloadingMap] = useState<Map<string, DownloadState>>(new Map())
-  const [isLoading, setIsLoading] = useState(true)
 
   // 加载已下载列表
   const refreshDownloads = useCallback(async () => {
     try {
+      // 检查 API 是否可用
+      if (!window.electronAPI?.getDownloads) {
+        console.warn('[DownloadStore] getDownloads API not available')
+        return
+      }
       const result = await window.electronAPI.getDownloads()
       setDownloads(result || [])
     } catch (error) {
       console.error('[DownloadStore] Failed to refresh downloads:', error)
-    } finally {
-      setIsLoading(false)
     }
   }, [])
 
-  // 初始化
+  // 初始化 - 延迟加载，不阻塞应用
   useEffect(() => {
-    refreshDownloads()
+    // 延迟初始化，确保 Electron API 已准备好
+    const timer = setTimeout(() => {
+      refreshDownloads()
+    }, 100)
+    return () => clearTimeout(timer)
   }, [refreshDownloads])
 
   // 下载歌曲
@@ -208,7 +212,6 @@ export function DownloadStoreProvider({ children }: { children: React.ReactNode 
   const value: DownloadStoreContextType = {
     downloads,
     downloadingMap,
-    isLoading,
     downloadSong,
     deleteDownload,
     isDownloaded,
