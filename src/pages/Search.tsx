@@ -478,9 +478,9 @@ export function Search() {
         <>
           <div
             style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(2, 1fr)',
-              gap: 12,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 8,
             }}
           >
             {results.map((song, index) => (

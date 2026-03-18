@@ -214,5 +214,35 @@ ipcMain.handle('store:delete', async (_, key: string) => {
   return true
 })
 
+// ========== 下载管理 IPC ==========
+
+import type { DownloadedSong } from './downloadManager'
+import { DownloadManager } from './downloadManager'
+
+// ========== 下载管理 IPC ==========
+
+ipcMain.handle('download:audio', async (_, songId: string, audioUrl: string, title: string) => {
+  return DownloadManager.downloadAudio(songId, audioUrl, title)
+})
+
+ipcMain.handle('download:get-downloads', async () => {
+  return DownloadManager.getDownloads()
+})
+
+ipcMain.handle('download:delete', async (_, songId: string) => {
+  return DownloadManager.deleteDownload(songId)
+})
+
+ipcMain.handle('download:is-downloaded', async (_, songId: string) => {
+  return DownloadManager.isDownloaded(songId)
+})
+
+// 下载进度事件
+ipcMain.on('download:subscribe-progress', (event, songId: string) => {
+  DownloadManager.subscribeProgress(songId, (progress) => {
+    event.sender.send('download:progress', { songId, progress })
+  })
+})
+
 // 启动应用
 app.whenReady().then(createWindow)
