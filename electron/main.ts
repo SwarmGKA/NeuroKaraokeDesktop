@@ -49,6 +49,7 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.mjs'),
       nodeIntegration: false,
       contextIsolation: true,
+      webSecurity: false, // 允许加载本地文件
     },
   })
 
@@ -218,8 +219,8 @@ ipcMain.handle('store:delete', async (_, key: string) => {
 
 import { DownloadManager } from './downloadManager'
 
-ipcMain.handle('download:audio', async (_, songId: string, audioUrl: string, title: string) => {
-  return DownloadManager.downloadAudio(songId, audioUrl, title)
+ipcMain.handle('download:audio', async (_, songId: string, audioUrl: string, title: string, coverUrl?: string, artists?: string) => {
+  return DownloadManager.downloadAudio(songId, audioUrl, title, coverUrl, artists)
 })
 
 ipcMain.handle('download:get-downloads', async () => {
@@ -232,6 +233,10 @@ ipcMain.handle('download:delete', async (_, songId: string) => {
 
 ipcMain.handle('download:is-downloaded', async (_, songId: string) => {
   return DownloadManager.isDownloaded(songId)
+})
+
+ipcMain.handle('download:show-in-folder', async (_, songId: string) => {
+  return DownloadManager.showInFolder(songId)
 })
 
 // 下载进度事件

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
-import { getAudioUrl } from './homeDataStore'
+import { getAudioUrl, getThumbnailUrl } from './homeDataStore'
 import type { Song, SongListItem, TrendingSong } from '../types/api'
 
 // 已下载歌曲的数据结构
@@ -9,6 +9,8 @@ export interface DownloadedSong {
   filePath: string
   fileSize: number
   downloadedAt: string
+  coverUrl?: string
+  artists?: string
 }
 
 // 下载状态
@@ -39,6 +41,8 @@ interface DownloadStoreMethods {
   getDownloadState: (songId: string | undefined) => DownloadState | undefined
   // 刷新下载列表
   refreshDownloads: () => Promise<void>
+  // 打开文件所在位置
+  showInFolder: (songId: string) => Promise<boolean>
 }
 
 // Context 类型
@@ -106,6 +110,29 @@ export function DownloadStoreProvider({ children }: { children: React.ReactNode 
       return false
     }
 
+    // 获取封面 URL
+    let coverUrl: string | undefined
+    if ('coverArt' in song && song.coverArt) {
+      if (song.coverArt.cloudflareId) {
+        coverUrl = getThumbnailUrl(song.coverArt.cloudflareId)
+      } else if (song.coverArt.absolutePath) {
+        const path = song.coverArt.absolutePath
+        if (path.startsWith('http')) {
+          coverUrl = path
+        } else {
+          coverUrl = `https://storage.neurokaraoke.com${path.startsWith('/') ? '' : '/'}${path}`
+        }
+      }
+    }
+
+    // 获取艺术家信息
+    let artists: string | undefined
+    if ('coverArtists' in song && song.coverArtists?.length) {
+      artists = song.coverArtists.join(', ')
+    } else if ('originalArtists' in song && song.originalArtists?.length) {
+      artists = song.originalArtists.join(', ')
+    }
+
     // 设置下载中状态
     setDownloadingMap(prev => {
       const next = new Map(prev)
@@ -127,7 +154,7 @@ export function DownloadStoreProvider({ children }: { children: React.ReactNode 
       })
 
       // 开始下载
-      const result = await window.electronAPI.downloadAudio(songId, audioUrl, song.title || 'Unknown')
+      const result = await window.electronAPI.downloadAudio(songId, audioUrl, song.title || 'Unknown', coverUrl, artists)
 
       unsubscribe()
 
@@ -209,6 +236,17 @@ export function DownloadStoreProvider({ children }: { children: React.ReactNode 
     return downloadingMap.get(songId)
   }, [downloadingMap])
 
+  // 打开文件所在位置
+  const showInFolder = useCallback(async (songId: string): Promise<boolean> => {
+    try {
+      const result = await window.electronAPI.showInFolder(songId)
+      return result.success
+    } catch (error) {
+      console.error('[DownloadStore] Show in folder failed:', error)
+      return false
+    }
+  }, [])
+
   const value: DownloadStoreContextType = {
     downloads,
     downloadingMap,
@@ -217,6 +255,7 @@ export function DownloadStoreProvider({ children }: { children: React.ReactNode 
     isDownloaded,
     getDownloadState,
     refreshDownloads,
+    showInFolder,
   }
 
   return React.createElement(DownloadStoreContext.Provider, { value }, children)

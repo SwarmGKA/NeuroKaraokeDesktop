@@ -98,7 +98,7 @@ export class DownloadManager {
       const filePath = path.join(this.downloadsDir, fileName)
 
       // 下载文件
-      const downloadedSong = await this.downloadFile(audioUrl, filePath, songId, title)
+      const downloadedSong = await this.downloadFile(audioUrl, filePath, songId, title, coverUrl, artists)
 
       // 保存元数据
       this.downloads.set(songId, downloadedSong)
@@ -119,7 +119,9 @@ export class DownloadManager {
     url: string,
     filePath: string,
     songId: string,
-    title: string
+    title: string,
+    coverUrl?: string,
+    artists?: string
   ): Promise<DownloadedSong> {
     return new Promise((resolve, reject) => {
       const protocol = url.startsWith('https') ? https : http
@@ -135,7 +137,7 @@ export class DownloadManager {
           if (redirectUrl) {
             file.close()
             fs.unlinkSync(filePath)
-            this.downloadFile(redirectUrl, filePath, songId, title)
+            this.downloadFile(redirectUrl, filePath, songId, title, coverUrl, artists)
               .then(resolve)
               .catch(reject)
             return

@@ -1,23 +1,35 @@
-import { Flex, Typography, Empty, Button } from 'antd'
+import { Flex, Typography, Empty, Button, Dropdown } from 'antd'
+import { FolderOutlined, MoreOutlined, DeleteOutlined } from '@ant-design/icons'
 import { useI18n } from '../i18n'
 import { useDownloadStore, type DownloadedSong } from '../stores/downloadStore'
 import { usePlayer } from '../stores/playerStore'
-import { SongItem } from '../components/SongItem'
+import type { MenuProps } from 'antd'
 
 const { Title, Text } = Typography
 
+// 格式化文件大小
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
 export function Downloads() {
   const { t } = useI18n()
-  const { downloads, deleteDownload } = useDownloadStore()
+  const { downloads, deleteDownload, showInFolder } = useDownloadStore()
   const { playSong, state } = usePlayer()
 
   // 播放已下载的歌曲
   const handlePlay = (download: DownloadedSong) => {
-    // 创建一个简单的 Song 对象
+    // 创建一个 Song 对象，使用本地文件路径
+    // Electron 需要使用 file:// 协议
     const song = {
       id: download.id,
       title: download.title,
+      // 使用 file:// 协议播放本地文件
       audioUrl: `file://${download.filePath}`,
+      coverArtists: download.artists ? [{ name: download.artists }] : undefined,
+      coverArt: download.coverUrl ? { absolutePath: download.coverUrl } : undefined,
     }
     playSong(song, [song], 0)
   }
@@ -25,6 +37,11 @@ export function Downloads() {
   // 删除下载
   const handleDelete = async (songId: string) => {
     await deleteDownload(songId)
+  }
+
+  // 打开文件所在位置
+  const handleShowInFolder = async (songId: string) => {
+    await showInFolder(songId)
   }
 
   // 当前播放的歌曲
@@ -54,18 +71,150 @@ export function Downloads() {
       ) : (
         <Flex vertical gap={8}>
           {downloads.map((download) => (
-            <SongItem
+            <DownloadSongItem
               key={download.id}
-              song={download}
-              onPlay={() => handlePlay(download)}
+              download={download}
               isPlaying={currentSongId === download.id && state.isPlaying}
-              showDownload={false}
-              showDelete={true}
+              onPlay={() => handlePlay(download)}
               onDelete={() => handleDelete(download.id)}
+              onShowInFolder={() => handleShowInFolder(download.id)}
+              deleteText={t('downloads.delete')}
+              showInFolderText={t('downloads.showInFolder')}
             />
           ))}
         </Flex>
       )}
     </Flex>
+  )
+}
+
+// 下载歌曲项组件（带更多操作）
+function DownloadSongItem({
+  download,
+  isPlaying,
+  onPlay,
+  onDelete,
+  onShowInFolder,
+  deleteText,
+  showInFolderText,
+}: {
+  download: DownloadedSong
+  isPlaying: boolean
+  onPlay: () => void
+  onDelete: () => void
+  onShowInFolder: () => void
+  deleteText: string
+  showInFolderText: string
+}) {
+  const { t } = useI18n()
+
+  // 下拉菜单项
+  const menuItems: MenuProps['items'] = [
+    {
+      key: 'showInFolder',
+      icon: <FolderOutlined />,
+      label: showInFolderText,
+      onClick: (e) => {
+        e.domEvent.stopPropagation()
+        onShowInFolder()
+      },
+    },
+    {
+      key: 'delete',
+      icon: <DeleteOutlined />,
+      label: deleteText,
+      danger: true,
+      onClick: (e) => {
+        e.domEvent.stopPropagation()
+        onDelete()
+      },
+    },
+  ]
+
+  return (
+    <div
+      onClick={onPlay}
+      style={{
+        backgroundColor: isPlaying ? 'rgba(102, 126, 234, 0.15)' : 'rgba(255,255,255,0.03)',
+        border: isPlaying ? '1px solid rgba(102, 126, 234, 0.5)' : '1px solid rgba(255,255,255,0.08)',
+        borderRadius: 12,
+        cursor: 'pointer',
+        padding: '12px 16px',
+        transition: 'all 0.2s ease',
+      }}
+    >
+      <Flex align="center" gap={12}>
+        {/* 封面 */}
+        <div
+          style={{
+            width: 48,
+            height: 48,
+            borderRadius: 8,
+            overflow: 'hidden',
+            flexShrink: 0,
+            position: 'relative',
+          }}
+        >
+          {download.coverUrl ? (
+            <img
+              src={download.coverUrl}
+              alt={download.title || ''}
+              loading="lazy"
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
+          ) : (
+            <div
+              style={{
+                width: '100%',
+                height: '100%',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Text style={{ color: '#fff', fontSize: 20 }}>♪</Text>
+            </div>
+          )}
+        </div>
+
+        {/* 歌曲信息 */}
+        <Flex vertical flex={1} style={{ minWidth: 0 }}>
+          <Text
+            ellipsis
+            style={{
+              fontWeight: 500,
+              color: isPlaying ? '#667eea' : undefined,
+            }}
+          >
+            {download.title || t('song.defaultTitle')}
+          </Text>
+          <Flex gap={8} align="center">
+            {download.artists && (
+              <Text type="secondary" ellipsis style={{ fontSize: 12 }}>
+                {download.artists}
+              </Text>
+            )}
+            <Text type="secondary" style={{ fontSize: 11 }}>
+              {formatFileSize(download.fileSize)}
+            </Text>
+          </Flex>
+        </Flex>
+
+        {/* 更多操作按钮 */}
+        <Dropdown
+          menu={{ items: menuItems }}
+          trigger={['click']}
+          placement="bottomRight"
+        >
+          <Button
+            type="text"
+            icon={<MoreOutlined />}
+            onClick={(e) => e.stopPropagation()}
+            style={{ color: 'rgba(255,255,255,0.45)' }}
+          />
+        </Dropdown>
+      </Flex>
+    </div>
   )
 }

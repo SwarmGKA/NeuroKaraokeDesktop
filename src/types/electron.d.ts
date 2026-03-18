@@ -7,6 +7,8 @@ export interface DownloadedSong {
   filePath: string
   fileSize: number
   downloadedAt: string
+  coverUrl?: string
+  artists?: string
 }
 
 export interface ElectronAPI {
@@ -49,10 +51,11 @@ export interface ElectronAPI {
   loadTranslations: (lang: string) => Promise<{ success: boolean; content?: string; error?: string }>
 
   // 下载 API
-  downloadAudio: (songId: string, audioUrl: string, title: string) => Promise<{ success: boolean; error?: string; song?: DownloadedSong }>
+  downloadAudio: (songId: string, audioUrl: string, title: string, coverUrl?: string, artists?: string) => Promise<{ success: boolean; error?: string; song?: DownloadedSong }>
   getDownloads: () => Promise<DownloadedSong[]>
   deleteDownload: (songId: string) => Promise<{ success: boolean; error?: string }>
   isDownloaded: (songId: string) => Promise<boolean>
+  showInFolder: (songId: string) => Promise<{ success: boolean; error?: string }>
   subscribeDownloadProgress: (songId: string, callback: (progress: number) => void) => () => void
 
   // IPC 事件监听
