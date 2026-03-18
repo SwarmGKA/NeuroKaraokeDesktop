@@ -289,8 +289,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
 
   // 下载 API
-  downloadAudio: (songId: string, audioUrl: string, title: string, coverUrl?: string, artists?: string) =>
-    ipcRenderer.invoke('download:audio', songId, audioUrl, title, coverUrl, artists),
+  downloadAudio: (songId: string, audioUrl: string, title: string, coverUrl?: string, artists?: string, originalArtists?: string) =>
+    ipcRenderer.invoke('download:audio', songId, audioUrl, title, coverUrl, artists, originalArtists),
   getDownloads: () => ipcRenderer.invoke('download:get-downloads'),
   deleteDownload: (songId: string) => ipcRenderer.invoke('download:delete', songId),
   isDownloaded: (songId: string) => ipcRenderer.invoke('download:is-downloaded', songId),

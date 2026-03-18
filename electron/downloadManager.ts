@@ -11,9 +11,16 @@ export interface DownloadedSong {
   filePath: string
   fileSize: number
   downloadedAt: string
-  // 封面信息
-  coverUrl?: string
+  coverPath?: string // 本地封面路径
   artists?: string
+  originalArtists?: string
+}
+
+// 封面索引条目
+interface CoverIndexEntry {
+  songId: string
+  audioFileName: string
+  coverFileName: string
 }
 
 // 下载进度回调类型
@@ -21,27 +28,38 @@ type ProgressCallback = (progress: number) => void
 
 // 下载管理器
 export class DownloadManager {
+  private static baseDir: string
   private static downloadsDir: string
+  private static coversDir: string
   private static metadataPath: string
+  private static coverIndexPath: string
   private static downloads: Map<string, DownloadedSong> = new Map()
+  private static coverIndex: Map<string, string> = new Map() // songId -> coverFileName
   private static progressCallbacks: Map<string, Set<ProgressCallback>> = new Map()
   private static activeDownloads: Map<string, boolean> = new Map()
 
   // 初始化下载目录
   private static init() {
-    if (this.downloadsDir) return
+    if (this.baseDir) return
 
     const userDataPath = app.getPath('userData')
-    this.downloadsDir = path.join(userDataPath, 'downloads')
-    this.metadataPath = path.join(userDataPath, 'downloads-metadata.json')
+    this.baseDir = path.join(userDataPath, 'downloads')
+    this.downloadsDir = path.join(this.baseDir, 'audio')
+    this.coversDir = path.join(this.baseDir, 'covers')
+    this.metadataPath = path.join(this.baseDir, 'metadata.json')
+    this.coverIndexPath = path.join(this.baseDir, 'cover-index.json')
 
-    // 创建下载目录
+    // 创建目录
     if (!fs.existsSync(this.downloadsDir)) {
       fs.mkdirSync(this.downloadsDir, { recursive: true })
+    }
+    if (!fs.existsSync(this.coversDir)) {
+      fs.mkdirSync(this.coversDir, { recursive: true })
     }
 
     // 加载元数据
     this.loadMetadata()
+    this.loadCoverIndex()
   }
 
   // 加载元数据
@@ -59,6 +77,21 @@ export class DownloadManager {
     }
   }
 
+  // 加载封面索引
+  private static loadCoverIndex() {
+    try {
+      if (fs.existsSync(this.coverIndexPath)) {
+        const content = fs.readFileSync(this.coverIndexPath, 'utf-8')
+        const data = JSON.parse(content) as CoverIndexEntry[]
+        data.forEach(entry => {
+          this.coverIndex.set(entry.songId, entry.coverFileName)
+        })
+      }
+    } catch (error) {
+      console.error('[DownloadManager] Failed to load cover index:', error)
+    }
+  }
+
   // 保存元数据
   private static saveMetadata() {
     try {
@@ -69,13 +102,40 @@ export class DownloadManager {
     }
   }
 
+  // 保存封面索引
+  private static saveCoverIndex() {
+    try {
+      const data: CoverIndexEntry[] = []
+      this.downloads.forEach((song, songId) => {
+        if (song.coverPath) {
+          data.push({
+            songId,
+            audioFileName: path.basename(song.filePath),
+            coverFileName: path.basename(song.coverPath),
+          })
+        }
+      })
+      fs.writeFileSync(this.coverIndexPath, JSON.stringify(data, null, 2), 'utf-8')
+    } catch (error) {
+      console.error('[DownloadManager] Failed to save cover index:', error)
+    }
+  }
+
+  // 生成安全的文件名：歌名 - 原作者名
+  private static generateFileName(title: string, originalArtists?: string): string {
+    const safeTitle = (title || 'Unknown').replace(/[<>:"/\\|?*]/g, '_')
+    const safeArtists = originalArtists ? ` - ${originalArtists.replace(/[<>:"/\\|?*]/g, '_')}` : ''
+    return `${safeTitle}${safeArtists}`
+  }
+
   // 下载音频
   static async downloadAudio(
     songId: string,
     audioUrl: string,
     title: string,
     coverUrl?: string,
-    artists?: string
+    artists?: string,
+    originalArtists?: string
   ): Promise<{ success: boolean; error?: string; song?: DownloadedSong }> {
     this.init()
 
@@ -92,17 +152,30 @@ export class DownloadManager {
     this.activeDownloads.set(songId, true)
 
     try {
-      // 创建安全的文件名
-      const safeTitle = title.replace(/[<>:"/\\|?*]/g, '_')
-      const fileName = `${songId}-${safeTitle}.mp3`
-      const filePath = path.join(this.downloadsDir, fileName)
+      // 生成文件名
+      const baseFileName = this.generateFileName(title, originalArtists)
+      const audioFileName = `${baseFileName}.mp3`
+      const audioPath = path.join(this.downloadsDir, audioFileName)
 
-      // 下载文件
-      const downloadedSong = await this.downloadFile(audioUrl, filePath, songId, title, coverUrl, artists)
+      // 下载音频文件
+      const downloadedSong = await this.downloadFile(audioUrl, audioPath, songId, title, artists, originalArtists)
+
+      // 下载封面
+      let coverPath: string | undefined
+      if (coverUrl) {
+        try {
+          const coverFileName = `${baseFileName}.jpg`
+          coverPath = await this.downloadCover(coverUrl, coverFileName)
+          downloadedSong.coverPath = coverPath
+        } catch (error) {
+          console.error('[DownloadManager] Failed to download cover:', error)
+        }
+      }
 
       // 保存元数据
       this.downloads.set(songId, downloadedSong)
       this.saveMetadata()
+      this.saveCoverIndex()
 
       return { success: true, song: downloadedSong }
     } catch (error) {
@@ -114,14 +187,76 @@ export class DownloadManager {
     }
   }
 
+  // 下载封面图片
+  private static downloadCover(coverUrl: string, fileName: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const protocol = coverUrl.startsWith('https') ? https : http
+      const coverPath = path.join(this.coversDir, fileName)
+
+      // 如果文件已存在，直接返回
+      if (fs.existsSync(coverPath)) {
+        resolve(coverPath)
+        return
+      }
+
+      const file = fs.createWriteStream(coverPath)
+
+      const request = protocol.get(coverUrl, (response) => {
+        // 处理重定向
+        if (response.statusCode === 301 || response.statusCode === 302) {
+          const redirectUrl = response.headers.location
+          if (redirectUrl) {
+            file.close()
+            fs.unlinkSync(coverPath)
+            this.downloadCover(redirectUrl, fileName)
+              .then(resolve)
+              .catch(reject)
+            return
+          }
+        }
+
+        if (response.statusCode !== 200) {
+          file.close()
+          fs.unlinkSync(coverPath)
+          reject(new Error(`HTTP ${response.statusCode}`))
+          return
+        }
+
+        response.pipe(file)
+
+        file.on('finish', () => {
+          file.close()
+          resolve(coverPath)
+        })
+      })
+
+      request.on('error', (error) => {
+        file.close()
+        if (fs.existsSync(coverPath)) {
+          fs.unlinkSync(coverPath)
+        }
+        reject(error)
+      })
+
+      request.setTimeout(15000, () => {
+        request.destroy()
+        file.close()
+        if (fs.existsSync(coverPath)) {
+          fs.unlinkSync(coverPath)
+        }
+        reject(new Error('Cover download timeout'))
+      })
+    })
+  }
+
   // 下载文件
   private static downloadFile(
     url: string,
     filePath: string,
     songId: string,
     title: string,
-    coverUrl?: string,
-    artists?: string
+    artists?: string,
+    originalArtists?: string
   ): Promise<DownloadedSong> {
     return new Promise((resolve, reject) => {
       const protocol = url.startsWith('https') ? https : http
@@ -137,7 +272,7 @@ export class DownloadManager {
           if (redirectUrl) {
             file.close()
             fs.unlinkSync(filePath)
-            this.downloadFile(redirectUrl, filePath, songId, title, coverUrl, artists)
+            this.downloadFile(redirectUrl, filePath, songId, title, artists, originalArtists)
               .then(resolve)
               .catch(reject)
             return
@@ -175,8 +310,8 @@ export class DownloadManager {
             filePath,
             fileSize: stats.size,
             downloadedAt: new Date().toISOString(),
-            coverUrl,
             artists,
+            originalArtists,
           }
 
           resolve(song)
@@ -191,7 +326,7 @@ export class DownloadManager {
         reject(error)
       })
 
-      request.setTimeout(30000, () => {
+      request.setTimeout(60000, () => {
         request.destroy()
         file.close()
         if (fs.existsSync(filePath)) {
@@ -218,14 +353,21 @@ export class DownloadManager {
     }
 
     try {
-      // 删除文件
+      // 删除音频文件
       if (fs.existsSync(song.filePath)) {
         fs.unlinkSync(song.filePath)
       }
 
+      // 删除封面文件
+      if (song.coverPath && fs.existsSync(song.coverPath)) {
+        fs.unlinkSync(song.coverPath)
+      }
+
       // 从元数据中删除
       this.downloads.delete(songId)
+      this.coverIndex.delete(songId)
       this.saveMetadata()
+      this.saveCoverIndex()
 
       return { success: true }
     } catch (error) {

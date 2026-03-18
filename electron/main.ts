@@ -219,8 +219,8 @@ ipcMain.handle('store:delete', async (_, key: string) => {
 
 import { DownloadManager } from './downloadManager'
 
-ipcMain.handle('download:audio', async (_, songId: string, audioUrl: string, title: string, coverUrl?: string, artists?: string) => {
-  return DownloadManager.downloadAudio(songId, audioUrl, title, coverUrl, artists)
+ipcMain.handle('download:audio', async (_, songId: string, audioUrl: string, title: string, coverUrl?: string, artists?: string, originalArtists?: string) => {
+  return DownloadManager.downloadAudio(songId, audioUrl, title, coverUrl, artists, originalArtists)
 })
 
 ipcMain.handle('download:get-downloads', async () => {
