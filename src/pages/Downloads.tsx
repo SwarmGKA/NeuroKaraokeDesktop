@@ -14,6 +14,14 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
+// 生成显示名称：歌名 - 原作者名
+function getDisplayName(title: string | undefined, originalArtists: string | undefined): string {
+  if (originalArtists) {
+    return `${title || 'Unknown'} - ${originalArtists}`
+  }
+  return title || 'Unknown'
+}
+
 export function Downloads() {
   const { t } = useI18n()
   const { downloads, deleteDownload, showInFolder } = useDownloadStore()
@@ -22,14 +30,14 @@ export function Downloads() {
   // 播放已下载的歌曲
   const handlePlay = (download: DownloadedSong) => {
     // 创建一个 Song 对象，使用本地文件路径
-    // Electron 需要使用 file:// 协议
     const song = {
       id: download.id,
       title: download.title,
       // 使用 file:// 协议播放本地文件
       audioUrl: `file://${download.filePath}`,
       coverArtists: download.artists ? [{ name: download.artists }] : undefined,
-      coverArt: download.coverUrl ? { absolutePath: download.coverUrl } : undefined,
+      originalArtists: download.originalArtists ? [{ name: download.originalArtists }] : undefined,
+      coverArt: download.coverPath ? { absolutePath: `file://${download.coverPath}` } : undefined,
     }
     playSong(song, [song], 0)
   }
@@ -106,7 +114,11 @@ function DownloadSongItem({
   deleteText: string
   showInFolderText: string
 }) {
-  const { t } = useI18n()
+  // 显示名称
+  const displayName = getDisplayName(download.title, download.originalArtists)
+
+  // 封面 URL（使用本地文件）
+  const coverUrl = download.coverPath ? `file://${download.coverPath}` : undefined
 
   // 下拉菜单项
   const menuItems: MenuProps['items'] = [
@@ -155,11 +167,10 @@ function DownloadSongItem({
             position: 'relative',
           }}
         >
-          {download.coverUrl ? (
+          {coverUrl ? (
             <img
-              src={download.coverUrl}
+              src={coverUrl}
               alt={download.title || ''}
-              loading="lazy"
               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             />
           ) : (
@@ -187,7 +198,7 @@ function DownloadSongItem({
               color: isPlaying ? '#667eea' : undefined,
             }}
           >
-            {download.title || t('song.defaultTitle')}
+            {displayName}
           </Text>
           <Flex gap={8} align="center">
             {download.artists && (

@@ -9,8 +9,9 @@ export interface DownloadedSong {
   filePath: string
   fileSize: number
   downloadedAt: string
-  coverUrl?: string
+  coverPath?: string // 本地封面路径
   artists?: string
+  originalArtists?: string
 }
 
 // 下载状态
@@ -127,10 +128,20 @@ export function DownloadStoreProvider({ children }: { children: React.ReactNode 
 
     // 获取艺术家信息
     let artists: string | undefined
+    let originalArtists: string | undefined
+
+    // 封面艺术家
     if ('coverArtists' in song && song.coverArtists?.length) {
-      artists = song.coverArtists.join(', ')
-    } else if ('originalArtists' in song && song.originalArtists?.length) {
-      artists = song.originalArtists.join(', ')
+      artists = Array.isArray(song.coverArtists)
+        ? song.coverArtists.join(', ')
+        : song.coverArtists
+    }
+
+    // 原唱艺术家
+    if ('originalArtists' in song && song.originalArtists?.length) {
+      originalArtists = Array.isArray(song.originalArtists)
+        ? song.originalArtists.join(', ')
+        : song.originalArtists
     }
 
     // 设置下载中状态
@@ -154,7 +165,7 @@ export function DownloadStoreProvider({ children }: { children: React.ReactNode 
       })
 
       // 开始下载
-      const result = await window.electronAPI.downloadAudio(songId, audioUrl, song.title || 'Unknown', coverUrl, artists)
+      const result = await window.electronAPI.downloadAudio(songId, audioUrl, song.title || 'Unknown', coverUrl, artists, originalArtists)
 
       unsubscribe()
 
