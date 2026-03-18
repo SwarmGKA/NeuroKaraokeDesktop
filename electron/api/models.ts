@@ -10,6 +10,9 @@ export interface Playlist {
   media?: Media;
   mosaicMedia?: Media[];  // API 返回 mosaicMedia
   songListDTOs?: SongListDTO[];
+  // IDK API 返回的 songs 数组
+  songs?: PlaylistSong[];
+  artCredit?: string;
   description?: string;
   createdBy?: string;
   totalDuration?: number;
@@ -28,6 +31,16 @@ export interface Media {
   contentType?: string;
   description?: string;
   credit?: string;
+}
+
+// IDK API 返回的歌单歌曲格式
+export interface PlaylistSong {
+  title?: string;
+  originalArtists?: string;
+  coverArtists?: string;
+  audioUrl?: string;
+  coverArt?: string;
+  artCredit?: string;
 }
 
 export interface SongListDTO {

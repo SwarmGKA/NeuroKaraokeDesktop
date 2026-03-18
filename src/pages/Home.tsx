@@ -6,7 +6,11 @@ import { PlaylistCardRow, TrendingGrid } from '../components/home'
 
 const { Title, Text } = Typography
 
-export function Home() {
+interface HomeProps {
+  onOpenPlaylist?: (playlistId: string) => void
+}
+
+export function Home({ onOpenPlaylist }: HomeProps) {
   const { t } = useI18n()
   const {
     officialPlaylists,
@@ -55,6 +59,7 @@ export function Home() {
         error={playlistsError}
         radioState={radioState}
         radioLoading={radioLoading}
+        onPlaylistClick={onOpenPlaylist}
       />
 
       {/* 热门趋势 */}

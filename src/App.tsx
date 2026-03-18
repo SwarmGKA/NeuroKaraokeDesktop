@@ -11,8 +11,8 @@ import { MiniPlayer, FullScreenPlayer } from './components/player'
 import {
   Home,
   Search,
-  Random,
   Explore,
+  PlaylistDetail,
   KaraokePlaylist,
   KaraokeQuiz,
   ListenTogether,
@@ -33,6 +33,7 @@ import { useThemeStore, BaseTheme, AccentTheme } from './hooks/useThemeStore'
 import { HomeDataProvider } from './stores/homeDataStore'
 import { PlayerProvider } from './stores/playerStore'
 import { SearchProvider } from './stores/searchStore'
+import { PlaylistDetailProvider, usePlaylistDetail } from './stores/playlistDetailStore'
 
 const STORAGE_KEY = 'sidebar-collapsed'
 
@@ -43,6 +44,7 @@ function AppContent() {
   const [userCardOpen, setUserCardOpen] = useState(false)
   const { language, setLanguage } = useI18n()
   const sidebarRef = useRef<HTMLDivElement>(null)
+  const { openPlaylist, closePlaylist } = usePlaylistDetail()
 
   // 加载侧边栏折叠状态
   useEffect(() => {
@@ -92,6 +94,18 @@ function AppContent() {
     }, 50)
   }
 
+  // 打开歌单详情页面
+  const handleOpenPlaylistDetail = async (playlistId: string) => {
+    await openPlaylist(playlistId)
+    setCurrentPage('playlistDetail')
+  }
+
+  // 关闭歌单详情页面
+  const handleClosePlaylistDetail = () => {
+    closePlaylist()
+    setCurrentPage('home')
+  }
+
   const handleOpenUserCard = () => setUserCardOpen(true)
   const handleCloseUserCard = () => setUserCardOpen(false)
 
@@ -101,13 +115,13 @@ function AppContent() {
   const renderPage = () => {
     switch (currentPage) {
       case 'home':
-        return <Home />
+        return <Home onOpenPlaylist={handleOpenPlaylistDetail} />
       case 'search':
         return <Search />
-      case 'random':
-        return <Random />
       case 'explore':
         return <Explore />
+      case 'playlistDetail':
+        return <PlaylistDetail onBack={handleClosePlaylistDetail} />
       case 'karaokePlaylist':
         return <KaraokePlaylist />
       case 'karaokeQuiz':
@@ -146,7 +160,7 @@ function AppContent() {
           />
         )
       default:
-        return <Home />
+        return <Home onOpenPlaylist={handleOpenPlaylistDetail} />
     }
   }
 
@@ -236,7 +250,9 @@ function App() {
       <HomeDataProvider>
         <PlayerProvider>
           <SearchProvider>
-            <AppContent />
+            <PlaylistDetailProvider>
+              <AppContent />
+            </PlaylistDetailProvider>
           </SearchProvider>
         </PlayerProvider>
       </HomeDataProvider>

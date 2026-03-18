@@ -17,17 +17,20 @@ interface PlaylistCardRowProps {
   onRadioClick?: () => void
   onKaraokeQuizClick?: () => void
   onListenTogetherClick?: () => void
+  onPlaylistClick?: (playlistId: string) => void
 }
 
 // 歌单卡片
 function PlaylistCard({
   playlist,
   index,
-  t
+  t,
+  onClick
 }: {
   playlist: Playlist
   index: number
   t: (key: string, params?: Record<string, string | number>) => string
+  onClick?: () => void
 }) {
   const coverUrl = playlist.mosaicMedia?.[0]?.cloudflareId
     ? getThumbnailUrl(playlist.mosaicMedia[0].cloudflareId)
@@ -43,6 +46,7 @@ function PlaylistCard({
     >
       <Card
         hoverable
+        onClick={onClick}
         style={{ width: 160, borderRadius: 12, overflow: 'hidden', cursor: 'pointer' }}
         styles={{ body: { padding: 12 } }}
         cover={
@@ -213,6 +217,7 @@ export function PlaylistCardRow({
   onRadioClick,
   onKaraokeQuizClick,
   onListenTogetherClick,
+  onPlaylistClick,
 }: PlaylistCardRowProps) {
   const { t } = useI18n()
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -291,6 +296,11 @@ export function PlaylistCardRow({
                 playlist={playlist}
                 index={index}
                 t={t}
+                onClick={() => {
+                  if (playlist.id && onPlaylistClick) {
+                    onPlaylistClick(playlist.id)
+                  }
+                }}
               />
             ))}
 

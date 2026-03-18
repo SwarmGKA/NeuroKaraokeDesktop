@@ -1,7 +1,7 @@
 export { Home } from './Home'
 export { Search } from './Search'
-export { Random } from './Random'
 export { Explore } from './Explore'
+export { PlaylistDetail } from './PlaylistDetail'
 export { KaraokePlaylist } from './KaraokePlaylist'
 export { KaraokeQuiz } from './KaraokeQuiz'
 export { ListenTogether } from './ListenTogether'

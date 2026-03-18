@@ -4,7 +4,6 @@ import { useI18n } from '../i18n'
 import {
   HomeOutlined,
   SearchOutlined,
-  SyncOutlined,
   CompassOutlined,
   UnorderedListOutlined,
   QuestionCircleOutlined,
@@ -28,8 +27,8 @@ const { Text } = Typography
 export type Page =
   | 'home'
   | 'search'
-  | 'random'
   | 'explore'
+  | 'playlistDetail'
   | 'artists'
   | 'karaokePlaylist'
   | 'karaokeQuiz'
@@ -69,7 +68,6 @@ export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(
     const mainMenu: MenuItem[] = [
       { id: 'home', icon: <HomeOutlined />, labelKey: 'sidebar.home' },
       { id: 'search', icon: <SearchOutlined />, labelKey: 'sidebar.search' },
-      { id: 'random', icon: <SyncOutlined />, labelKey: 'sidebar.random' },
       { id: 'explore', icon: <CompassOutlined />, labelKey: 'sidebar.explore' },
       { id: 'karaokePlaylist', icon: <UnorderedListOutlined />, labelKey: 'sidebar.karaokePlaylist' },
       { id: 'karaokeQuiz', icon: <QuestionCircleOutlined />, labelKey: 'sidebar.karaokeQuiz' },
