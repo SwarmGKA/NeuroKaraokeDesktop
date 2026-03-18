@@ -1,10 +1,11 @@
-import { Flex, Typography, Card, Skeleton, Button, Empty } from 'antd'
+import { Flex, Typography, Card, Skeleton, Button, Empty, Progress } from 'antd'
 import { motion } from 'framer-motion'
-import { PlayCircleOutlined, ArrowLeftOutlined } from '@ant-design/icons'
+import { PlayCircleOutlined, ArrowLeftOutlined, DownloadOutlined, CheckCircleOutlined } from '@ant-design/icons'
 import { useI18n } from '../i18n'
 import { usePlaylistDetail } from '../stores/playlistDetailStore'
 import { getThumbnailUrl } from '../stores/homeDataStore'
 import { usePlayer } from '../stores/playerStore'
+import { useDownloadStore } from '../stores/downloadStore'
 import type { SongListDTO, PlaylistSong } from '../types/api'
 
 const { Title, Text } = Typography
@@ -16,7 +17,11 @@ function SongItem({
   artists,
   index,
   onPlay,
-  isPlaying
+  isPlaying,
+  songId,
+  hasAudio,
+  downloadText,
+  downloadedText,
 }: {
   title?: string
   coverUrl?: string
@@ -24,7 +29,65 @@ function SongItem({
   index: number
   onPlay: () => void
   isPlaying: boolean
+  songId?: string
+  hasAudio?: boolean
+  downloadText: string
+  downloadedText: string
 }) {
+  const { downloadSong, isDownloaded, getDownloadState } = useDownloadStore()
+
+  const alreadyDownloaded = isDownloaded(songId)
+  const downloadState = getDownloadState(songId)
+  const isDownloading = downloadState?.status === 'downloading'
+
+  // 处理下载
+  const handleDownload = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (songId && !alreadyDownloaded && !isDownloading && hasAudio) {
+      // 创建一个简单的歌曲对象用于下载
+      await downloadSong({
+        id: songId,
+        title: title,
+        absolutePath: undefined, // 这个信息在 PlaylistDetail 中不可用
+      } as any)
+    }
+  }
+
+  // 渲染下载按钮
+  const renderDownloadButton = () => {
+    if (!songId || !hasAudio) return null
+
+    if (isDownloading) {
+      return (
+        <div style={{ width: 24, height: 24 }}>
+          <Progress
+            type="circle"
+            percent={downloadState?.progress || 0}
+            size={24}
+            strokeColor="#667eea"
+          />
+        </div>
+      )
+    }
+
+    if (alreadyDownloaded) {
+      return (
+        <CheckCircleOutlined
+          style={{ fontSize: 18, color: '#52c41a' }}
+          title={downloadedText}
+        />
+      )
+    }
+
+    return (
+      <DownloadOutlined
+        style={{ fontSize: 18, color: 'rgba(255,255,255,0.65)', cursor: 'pointer' }}
+        onClick={handleDownload}
+        title={downloadText}
+      />
+    )
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, x: -20 }}
@@ -109,6 +172,9 @@ function SongItem({
               </Text>
             )}
           </Flex>
+
+          {/* 下载按钮 */}
+          {renderDownloadButton()}
         </Flex>
       </Card>
     </motion.div>
@@ -123,6 +189,10 @@ export function PlaylistDetail({ onBack }: PlaylistDetailProps) {
   const { t } = useI18n()
   const { currentPlaylist, loading, error } = usePlaylistDetail()
   const { state, playSong } = usePlayer()
+
+  // 翻译文本
+  const downloadText = t('song.download')
+  const downloadedText = t('downloads.downloaded')
 
   // 获取歌曲列表 - 支持两种数据格式
   // 1. songs: 来自 IDK API
@@ -349,6 +419,8 @@ export function PlaylistDetail({ onBack }: PlaylistDetailProps) {
             const songCoverUrl = getSongCoverUrl(song, useIdkFormat)
             const artists = getSongArtists(song, useIdkFormat)
             const isPlaying = state.currentSong?.title === title && state.isPlaying
+            const songId = useIdkFormat ? undefined : (song as SongListDTO).id
+            const hasAudio = useIdkFormat ? !!(song as PlaylistSong).audioUrl : !!(song as SongListDTO).absolutePath || !!(song as SongListDTO).hls
 
             return (
               <SongItem
@@ -359,6 +431,10 @@ export function PlaylistDetail({ onBack }: PlaylistDetailProps) {
                 index={index}
                 onPlay={() => playSongAtIndex(index)}
                 isPlaying={isPlaying}
+                songId={songId}
+                hasAudio={hasAudio}
+                downloadText={downloadText}
+                downloadedText={downloadedText}
               />
             )
           })

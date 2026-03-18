@@ -34,6 +34,7 @@ import { HomeDataProvider } from './stores/homeDataStore'
 import { PlayerProvider } from './stores/playerStore'
 import { SearchProvider } from './stores/searchStore'
 import { PlaylistDetailProvider, usePlaylistDetail } from './stores/playlistDetailStore'
+import { DownloadStoreProvider } from './stores/downloadStore'
 
 const STORAGE_KEY = 'sidebar-collapsed'
 
@@ -251,7 +252,9 @@ function App() {
         <PlayerProvider>
           <SearchProvider>
             <PlaylistDetailProvider>
-              <AppContent />
+              <DownloadStoreProvider>
+                <AppContent />
+              </DownloadStoreProvider>
             </PlaylistDetailProvider>
           </SearchProvider>
         </PlayerProvider>

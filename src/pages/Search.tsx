@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Typography, Flex, Tag, Select, Skeleton, Empty, Button, Card } from 'antd'
-import { HistoryOutlined, FireOutlined, PlayCircleOutlined } from '@ant-design/icons'
+import { HistoryOutlined, FireOutlined } from '@ant-design/icons'
 import { useI18n } from '../i18n'
 import { useHomeData, getThumbnailUrl, getCoverArtFromCache } from '../stores/homeDataStore'
 import { useSearchHistory } from '../hooks/useSearchHistory'
 import { useSearchState } from '../stores/searchStore'
 import { usePlayer } from '../stores/playerStore'
+import { SongItem } from '../components/SongItem'
 import type { SongListItem, Song, CoverArt } from '../types/api'
 import '../components/search/Search.css'
 
@@ -109,92 +110,17 @@ function SongCard({
   const coverUrl = useSongCoverUrl(song)
 
   const artists = song.coverArtists?.join(', ') || song.originalArtists?.join(', ') || t('song.unknownArtist')
+  const hasAudio = !!(song.absolutePath || song.hls)
 
   return (
-    <Card
-      hoverable
-      onClick={onPlay}
-      style={{
-        borderRadius: 12,
-        overflow: 'hidden',
-        cursor: 'pointer',
-      }}
-      styles={{
-        body: { padding: 12 },
-      }}
-    >
-      <Flex gap={12} align="center">
-        {/* 封面 */}
-        <div
-          style={{
-            width: 56,
-            height: 56,
-            borderRadius: 8,
-            overflow: 'hidden',
-            flexShrink: 0,
-            position: 'relative',
-          }}
-        >
-          {coverUrl ? (
-            <img
-              src={coverUrl}
-              alt={song.title || ''}
-              loading="lazy"
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            />
-          ) : (
-            <div
-              style={{
-                width: '100%',
-                height: '100%',
-                background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Text style={{ color: '#fff', fontSize: 20 }}>♪</Text>
-            </div>
-          )}
-          {/* 悬浮播放图标 */}
-          <div
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: 'rgba(0,0,0,0.4)',
-              opacity: 0,
-              transition: 'opacity 0.2s ease',
-            }}
-            className="play-overlay"
-          >
-            <PlayCircleOutlined style={{ fontSize: 24, color: '#fff' }} />
-          </div>
-        </div>
-
-        {/* 信息 */}
-        <Flex vertical flex={1} style={{ minWidth: 0 }}>
-          <Text
-            ellipsis
-            style={{ fontWeight: 500, fontSize: 14 }}
-          >
-            {song.title || t('song.defaultTitle')}
-          </Text>
-          <Text
-            ellipsis
-            type="secondary"
-            style={{ fontSize: 12, marginTop: 2 }}
-          >
-            {artists}
-          </Text>
-        </Flex>
-      </Flex>
-    </Card>
+    <SongItem
+      song={song}
+      coverUrl={coverUrl}
+      artists={artists}
+      onPlay={onPlay}
+      showDownload={true}
+      canDownload={hasAudio}
+    />
   )
 }
 

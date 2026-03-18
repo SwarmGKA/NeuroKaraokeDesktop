@@ -1,10 +1,11 @@
-import { Card, Skeleton, Typography, Flex, Tag } from 'antd'
+import { Card, Skeleton, Typography, Flex, Tag, Progress } from 'antd'
 import { motion } from 'framer-motion'
-import { FireOutlined, PlayCircleOutlined } from '@ant-design/icons'
+import { FireOutlined, PlayCircleOutlined, DownloadOutlined, CheckCircleOutlined } from '@ant-design/icons'
 import type { TrendingSong, Song } from '../../types/api'
 import { getThumbnailUrl } from '../../stores/homeDataStore'
 import { useI18n } from '../../i18n'
 import { usePlayer } from '../../stores/playerStore'
+import { useDownloadStore } from '../../stores/downloadStore'
 
 const { Text } = Typography
 
@@ -41,6 +42,8 @@ function TrendingSongCard({
   unknownArtistText,
   coverAltText,
   defaultTitleText,
+  downloadText,
+  downloadedText,
   onPlay,
 }: {
   song: TrendingSong
@@ -49,6 +52,8 @@ function TrendingSongCard({
   unknownArtistText: string
   coverAltText: string
   defaultTitleText: string
+  downloadText: string
+  downloadedText: string
   onPlay: () => void
 }) {
   const coverUrl = song.coverArt?.cloudflareId
@@ -56,6 +61,56 @@ function TrendingSongCard({
     : undefined
 
   const artists = song.coverArtists?.join(', ') || song.originalArtists?.join(', ') || unknownArtistText
+  const { downloadSong, isDownloaded, getDownloadState } = useDownloadStore()
+
+  const songId = song.id
+  const alreadyDownloaded = isDownloaded(songId)
+  const downloadState = getDownloadState(songId)
+  const isDownloading = downloadState?.status === 'downloading'
+  const hasAudio = !!(song.absolutePath)
+
+  // 处理下载
+  const handleDownload = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (songId && !alreadyDownloaded && !isDownloading && hasAudio) {
+      await downloadSong(song)
+    }
+  }
+
+  // 渲染下载按钮
+  const renderDownloadButton = () => {
+    if (!songId || !hasAudio) return null
+
+    if (isDownloading) {
+      return (
+        <div style={{ width: 24, height: 24 }}>
+          <Progress
+            type="circle"
+            percent={downloadState?.progress || 0}
+            size={24}
+            strokeColor="#667eea"
+          />
+        </div>
+      )
+    }
+
+    if (alreadyDownloaded) {
+      return (
+        <CheckCircleOutlined
+          style={{ fontSize: 18, color: '#52c41a' }}
+          title={downloadedText}
+        />
+      )
+    }
+
+    return (
+      <DownloadOutlined
+        style={{ fontSize: 18, color: 'rgba(255,255,255,0.65)', cursor: 'pointer' }}
+        onClick={handleDownload}
+        title={downloadText}
+      />
+    )
+  }
 
   return (
     <motion.div
@@ -147,6 +202,9 @@ function TrendingSongCard({
             </Text>
           </Flex>
 
+          {/* 下载按钮 */}
+          {renderDownloadButton()}
+
           {/* 热门标记 */}
           {index < 3 && (
             <Tag
@@ -198,6 +256,8 @@ export function TrendingGrid({ songs, loading, error }: TrendingGridProps) {
   const unknownArtistText = t('song.unknownArtist')
   const coverAltText = t('song.coverAlt')
   const defaultTitleText = t('song.defaultTitle')
+  const downloadText = t('song.download')
+  const downloadedText = t('downloads.downloaded')
 
   // 播放歌曲
   const handlePlay = (song: TrendingSong, index: number) => {
@@ -242,6 +302,8 @@ export function TrendingGrid({ songs, loading, error }: TrendingGridProps) {
               unknownArtistText={unknownArtistText}
               coverAltText={coverAltText}
               defaultTitleText={defaultTitleText}
+              downloadText={downloadText}
+              downloadedText={downloadedText}
               onPlay={() => handlePlay(song, index)}
             />
           ))

@@ -1,5 +1,14 @@
 // Electron API 类型定义
 
+// 已下载歌曲的数据结构
+export interface DownloadedSong {
+  id: string
+  title: string
+  filePath: string
+  fileSize: number
+  downloadedAt: string
+}
+
 export interface ElectronAPI {
   // 窗口控制
   minimizeWindow: () => void
@@ -38,6 +47,13 @@ export interface ElectronAPI {
 
   // i18n 加载
   loadTranslations: (lang: string) => Promise<{ success: boolean; content?: string; error?: string }>
+
+  // 下载 API
+  downloadAudio: (songId: string, audioUrl: string, title: string) => Promise<{ success: boolean; error?: string; song?: DownloadedSong }>
+  getDownloads: () => Promise<DownloadedSong[]>
+  deleteDownload: (songId: string) => Promise<{ success: boolean; error?: string }>
+  isDownloaded: (songId: string) => Promise<boolean>
+  subscribeDownloadProgress: (songId: string, callback: (progress: number) => void) => () => void
 
   // IPC 事件监听
   on: (channel: string, callback: (...args: unknown[]) => void) => void

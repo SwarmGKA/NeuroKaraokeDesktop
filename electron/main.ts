@@ -216,10 +216,7 @@ ipcMain.handle('store:delete', async (_, key: string) => {
 
 // ========== 下载管理 IPC ==========
 
-import type { DownloadedSong } from './downloadManager'
 import { DownloadManager } from './downloadManager'
-
-// ========== 下载管理 IPC ==========
 
 ipcMain.handle('download:audio', async (_, songId: string, audioUrl: string, title: string) => {
   return DownloadManager.downloadAudio(songId, audioUrl, title)
