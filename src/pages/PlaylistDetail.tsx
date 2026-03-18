@@ -1,6 +1,6 @@
 import { Flex, Typography, Card, Skeleton, Button, Empty } from 'antd'
 import { motion } from 'framer-motion'
-import { PlayCircleOutlined, ArrowLeftOutlined, ClockCircleOutlined } from '@ant-design/icons'
+import { PlayCircleOutlined, ArrowLeftOutlined } from '@ant-design/icons'
 import { useI18n } from '../i18n'
 import { usePlaylistDetail } from '../stores/playlistDetailStore'
 import { usePlayer } from '../stores/playerStore'
@@ -9,12 +9,6 @@ import type { PlaylistSong } from '../types/api'
 const { Title, Text } = Typography
 
 // 格式化时长（从 audioUrl 推断或使用默认值）
-function formatDuration(seconds?: number): string {
-  if (!seconds) return ''
-  const mins = Math.floor(seconds / 60)
-  const secs = Math.floor(seconds % 60)
-  return `${mins}:${secs.toString().padStart(2, '0')}`
-}
 
 // 歌曲列表项组件
 function SongItem({
@@ -174,8 +168,11 @@ export function PlaylistDetail({ onBack }: PlaylistDetailProps) {
     playSong(playlistSongs[index], playlistSongs, index)
   }
 
-  // 获取封面 URL - 使用 cover 字段
-  const coverUrl = currentPlaylist?.cover
+  // 获取封面 URL - 使用 cover 字段，如果无效则使用第一首歌的封面
+  const isValidCover = currentPlaylist?.cover && !currentPlaylist.cover.includes("///quality")
+  const coverUrl = isValidCover
+    ? currentPlaylist?.cover
+    : songs[0]?.coverArt
 
   if (loading) {
     return (
