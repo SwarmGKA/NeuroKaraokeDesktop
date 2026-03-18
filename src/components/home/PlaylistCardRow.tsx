@@ -17,7 +17,7 @@ interface PlaylistCardRowProps {
   onRadioClick?: () => void
   onKaraokeQuizClick?: () => void
   onListenTogetherClick?: () => void
-  onPlaylistClick?: (playlistId: string) => void
+  onPlaylistClick?: (playlist: Playlist) => void
 }
 
 // 歌单卡片
@@ -297,8 +297,8 @@ export function PlaylistCardRow({
                 index={index}
                 t={t}
                 onClick={() => {
-                  if (playlist.id && onPlaylistClick) {
-                    onPlaylistClick(playlist.id)
+                  if (onPlaylistClick) {
+                    onPlaylistClick(playlist)
                   }
                 }}
               />

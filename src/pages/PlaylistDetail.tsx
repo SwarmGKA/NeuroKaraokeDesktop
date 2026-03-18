@@ -3,31 +3,28 @@ import { motion } from 'framer-motion'
 import { PlayCircleOutlined, ArrowLeftOutlined } from '@ant-design/icons'
 import { useI18n } from '../i18n'
 import { usePlaylistDetail } from '../stores/playlistDetailStore'
+import { getThumbnailUrl } from '../stores/homeDataStore'
 import { usePlayer } from '../stores/playerStore'
-import type { PlaylistSong } from '../types/api'
+import type { SongListDTO, PlaylistSong } from '../types/api'
 
 const { Title, Text } = Typography
 
-// 格式化时长（从 audioUrl 推断或使用默认值）
-
-// 歌曲列表项组件
+// 统一的歌曲项组件
 function SongItem({
-  song,
+  title,
+  coverUrl,
+  artists,
   index,
   onPlay,
   isPlaying
 }: {
-  song: PlaylistSong
+  title?: string
+  coverUrl?: string
+  artists?: string
   index: number
   onPlay: () => void
   isPlaying: boolean
 }) {
-  // coverArt 已经是完整的 URL
-  const coverUrl = song.coverArt
-
-  // 艺术家信息
-  const artists = song.coverArtists || song.originalArtists
-
   return (
     <motion.div
       initial={{ opacity: 0, x: -20 }}
@@ -61,7 +58,7 @@ function SongItem({
             {coverUrl ? (
               <img
                 src={coverUrl}
-                alt={song.title || ''}
+                alt={title || ''}
                 loading="lazy"
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               />
@@ -104,7 +101,7 @@ function SongItem({
                 color: isPlaying ? '#667eea' : undefined,
               }}
             >
-              {song.title || '未知歌曲'}
+              {title || '未知歌曲'}
             </Text>
             {artists && (
               <Text type="secondary" ellipsis style={{ fontSize: 12 }}>
@@ -112,13 +109,6 @@ function SongItem({
               </Text>
             )}
           </Flex>
-
-          {/* 艺术家标签 */}
-          {song.coverArtists && (
-            <Text type="secondary" style={{ fontSize: 12, flexShrink: 0 }}>
-              {song.coverArtists}
-            </Text>
-          )}
         </Flex>
       </Card>
     </motion.div>
@@ -134,45 +124,99 @@ export function PlaylistDetail({ onBack }: PlaylistDetailProps) {
   const { currentPlaylist, loading, error } = usePlaylistDetail()
   const { state, playSong } = usePlayer()
 
-  // 获取歌曲列表（优先使用 songs，否则使用 songListDTOs）
-  const songs = currentPlaylist?.songs || []
+  // 获取歌曲列表 - 支持两种数据格式
+  // 1. songs: 来自 IDK API
+  // 2. songListDTOs: 来自 getOfficialPlaylists API
+  const idkSongs = currentPlaylist?.songs || []
+  const apiSongs = currentPlaylist?.songListDTOs || []
+  const useIdkFormat = idkSongs.length > 0
+  const songs = useIdkFormat ? idkSongs : apiSongs
+  const songCount = songs.length
 
-  // 播放全部
-  const handlePlayAll = () => {
-    if (songs.length === 0) return
+  // 获取歌单封面 URL
+  const getPlaylistCover = () => {
+    // 优先使用 mosaicMedia
+    if (currentPlaylist?.mosaicMedia?.[0]?.cloudflareId) {
+      return getThumbnailUrl(currentPlaylist.mosaicMedia[0].cloudflareId)
+    }
+    // 其次使用 media
+    if (currentPlaylist?.media?.cloudflareId) {
+      return getThumbnailUrl(currentPlaylist.media.cloudflareId)
+    }
+    // 最后使用第一首歌的封面
+    if (useIdkFormat && idkSongs[0]?.coverArt) {
+      return idkSongs[0].coverArt
+    }
+    if (!useIdkFormat && apiSongs[0]?.coverArt?.cloudflareId) {
+      return getThumbnailUrl(apiSongs[0].coverArt.cloudflareId)
+    }
+    return undefined
+  }
+  const coverUrl = getPlaylistCover()
 
-    // 转换为 Song 格式
-    const playlistSongs = songs.map((song) => ({
-      title: song.title,
-      audioUrl: song.audioUrl,
-      coverArtists: song.coverArtists ? [{ name: song.coverArtists }] : undefined,
-      originalArtists: song.originalArtists ? [{ name: song.originalArtists }] : undefined,
-      coverArt: song.coverArt ? { absolutePath: song.coverArt } : undefined,
-    }))
-
-    playSong(playlistSongs[0], playlistSongs, 0)
+  // 获取歌曲封面 URL
+  const getSongCoverUrl = (song: SongListDTO | PlaylistSong, isIdkFormat: boolean): string | undefined => {
+    if (isIdkFormat) {
+      return (song as PlaylistSong).coverArt
+    }
+    const dto = song as SongListDTO
+    if (dto.coverArt?.cloudflareId) {
+      return getThumbnailUrl(dto.coverArt.cloudflareId)
+    }
+    return undefined
   }
 
-  // 播放单首歌曲
-  const handlePlaySong = (index: number) => {
+  // 获取歌曲艺术家
+  const getSongArtists = (song: SongListDTO | PlaylistSong, isIdkFormat: boolean): string | undefined => {
+    if (isIdkFormat) {
+      const s = song as PlaylistSong
+      return s.coverArtists || s.originalArtists
+    }
+    const dto = song as SongListDTO
+    if (dto.coverArtists?.length) {
+      return dto.coverArtists.join(', ')
+    }
+    if (dto.originalArtists?.length) {
+      return dto.originalArtists.join(', ')
+    }
+    return undefined
+  }
+
+  // 播放指定索引的歌曲
+  const playSongAtIndex = (index: number) => {
     if (songs.length === 0) return
 
-    const playlistSongs = songs.map((song) => ({
-      title: song.title,
-      audioUrl: song.audioUrl,
-      coverArtists: song.coverArtists ? [{ name: song.coverArtists }] : undefined,
-      originalArtists: song.originalArtists ? [{ name: song.originalArtists }] : undefined,
-      coverArt: song.coverArt ? { absolutePath: song.coverArt } : undefined,
-    }))
+    const playlistSongs = songs.map((song) => {
+      if (useIdkFormat) {
+        const s = song as PlaylistSong
+        return {
+          title: s.title,
+          audioUrl: s.audioUrl,
+          coverArtists: s.coverArtists ? [{ name: s.coverArtists }] : undefined,
+          originalArtists: s.originalArtists ? [{ name: s.originalArtists }] : undefined,
+          coverArt: s.coverArt ? { absolutePath: s.coverArt } : undefined,
+        }
+      } else {
+        const s = song as SongListDTO
+        return {
+          id: s.id,
+          title: s.title,
+          absolutePath: s.absolutePath,
+          hls: s.hls,
+          coverArt: s.coverArt,
+          coverArtists: s.coverArtists?.map(name => ({ name })),
+          originalArtists: s.originalArtists?.map(name => ({ name })),
+        }
+      }
+    })
 
     playSong(playlistSongs[index], playlistSongs, index)
   }
 
-  // 获取封面 URL - 使用 cover 字段，如果无效则使用第一首歌的封面
-  const isValidCover = currentPlaylist?.cover && !currentPlaylist.cover.includes("///quality")
-  const coverUrl = isValidCover
-    ? currentPlaylist?.cover
-    : songs[0]?.coverArt
+  // 播放全部
+  const handlePlayAll = () => {
+    playSongAtIndex(0)
+  }
 
   if (loading) {
     return (
@@ -275,7 +319,7 @@ export function PlaylistDetail({ onBack }: PlaylistDetailProps) {
             </Title>
             <Flex gap={16} align="center">
               <Text type="secondary">
-                {t('playlist.songCount', { '0': songs.length })}
+                {t('playlist.songCount', { '0': songCount })}
               </Text>
             </Flex>
           </Flex>
@@ -288,7 +332,7 @@ export function PlaylistDetail({ onBack }: PlaylistDetailProps) {
           type="primary"
           icon={<PlayCircleOutlined />}
           onClick={handlePlayAll}
-          disabled={songs.length === 0}
+          disabled={songCount === 0}
           size="large"
         >
           {t('playlist.playAll')}
@@ -297,19 +341,23 @@ export function PlaylistDetail({ onBack }: PlaylistDetailProps) {
 
       {/* 歌曲列表 */}
       <div style={{ padding: '0 40px 40px' }}>
-        {songs.length === 0 ? (
+        {songCount === 0 ? (
           <Empty description={t('playlist.emptySongs')} style={{ marginTop: 48 }} />
         ) : (
           songs.map((song, index) => {
-            // 检查当前歌曲是否正在播放
-            const isPlaying = state.currentSong?.title === song.title && state.isPlaying
+            const title = song.title
+            const songCoverUrl = getSongCoverUrl(song, useIdkFormat)
+            const artists = getSongArtists(song, useIdkFormat)
+            const isPlaying = state.currentSong?.title === title && state.isPlaying
 
             return (
               <SongItem
-                key={`${song.title}-${index}`}
-                song={song}
+                key={`${title}-${index}`}
+                title={title}
+                coverUrl={songCoverUrl}
+                artists={artists}
                 index={index}
-                onPlay={() => handlePlaySong(index)}
+                onPlay={() => playSongAtIndex(index)}
                 isPlaying={isPlaying}
               />
             )

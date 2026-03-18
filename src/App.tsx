@@ -95,8 +95,8 @@ function AppContent() {
   }
 
   // 打开歌单详情页面
-  const handleOpenPlaylistDetail = async (playlistId: string) => {
-    await openPlaylist(playlistId)
+  const handleOpenPlaylistDetail = async (playlist: import('./types/api').Playlist) => {
+    await openPlaylist(playlist)
     setCurrentPage('playlistDetail')
   }
 

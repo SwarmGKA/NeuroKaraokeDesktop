@@ -6,7 +6,7 @@ interface PlaylistDetailContextType {
   playlistId: string | null
   loading: boolean
   error: string | null
-  openPlaylist: (id: string) => Promise<void>
+  openPlaylist: (idOrPlaylist: string | Playlist) => Promise<void>
   closePlaylist: () => void
 }
 
@@ -18,20 +18,32 @@ export function PlaylistDetailProvider({ children }: { children: React.ReactNode
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const openPlaylist = useCallback(async (id: string) => {
-    setLoading(true)
+  // 支持传入 ID 或完整的 Playlist 对象
+  // 如果传入 Playlist 对象，则直接使用，无需 API 调用
+  const openPlaylist = useCallback(async (idOrPlaylist: string | Playlist) => {
     setError(null)
-    setPlaylistId(id)
 
-    try {
-      const result = await window.electronAPI.getPlaylist(id)
-      setCurrentPlaylist(result)
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '获取歌单详情失败'
-      setError(errorMessage)
-      setCurrentPlaylist(null)
-    } finally {
+    if (typeof idOrPlaylist === 'object') {
+      // 直接使用传入的歌单数据
+      setCurrentPlaylist(idOrPlaylist)
+      setPlaylistId(idOrPlaylist.id || null)
       setLoading(false)
+    } else {
+      // 需要从 API 获取数据
+      const id = idOrPlaylist
+      setLoading(true)
+      setPlaylistId(id)
+
+      try {
+        const result = await window.electronAPI.getPlaylist(id)
+        setCurrentPlaylist(result)
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : '获取歌单详情失败'
+        setError(errorMessage)
+        setCurrentPlaylist(null)
+      } finally {
+        setLoading(false)
+      }
     }
   }, [])
 

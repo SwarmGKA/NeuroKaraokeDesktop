@@ -3,11 +3,12 @@ import { motion } from 'framer-motion'
 import { useI18n } from '../i18n'
 import { useHomeData } from '../stores/homeDataStore'
 import { PlaylistCardRow, TrendingGrid } from '../components/home'
+import type { Playlist } from '../types/api'
 
 const { Title, Text } = Typography
 
 interface HomeProps {
-  onOpenPlaylist?: (playlistId: string) => void
+  onOpenPlaylist?: (playlist: Playlist) => void
 }
 
 export function Home({ onOpenPlaylist }: HomeProps) {

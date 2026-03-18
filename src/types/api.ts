@@ -43,6 +43,18 @@ export interface PlaylistSong {
 }
 
 export interface SongListDTO {
+  streamDate?: string
+  dateAdded?: string
+  coverArtists?: string[]
+  originalArtists?: string[]
+  genres?: SongTag[]
+  coverArt?: CoverArt
+  thumbnailArt?: CoverArt
+  order?: number
+  hasLyrics?: boolean
+  userUploaded?: boolean
+  videoId?: string
+  hls?: string
   id?: string
   absolutePath?: string
   title?: string
