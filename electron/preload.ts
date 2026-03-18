@@ -287,4 +287,21 @@ contextBridge.exposeInMainWorld('electronAPI', {
   removeListener: (channel: string, callback: (...args: unknown[]) => void) => {
     ipcRenderer.removeListener(channel, callback as Parameters<typeof ipcRenderer.removeListener>[1])
   },
+
+  // 下载 API
+  downloadAudio: (songId: string, audioUrl: string, title: string) =>
+    ipcRenderer.invoke('download:audio', songId, audioUrl, title),
+  getDownloads: () => ipcRenderer.invoke('download:get-downloads'),
+  deleteDownload: (songId: string) => ipcRenderer.invoke('download:delete', songId),
+  isDownloaded: (songId: string) => ipcRenderer.invoke('download:is-downloaded', songId),
+  subscribeDownloadProgress: (songId: string, callback: (progress: number) => void) => {
+    const handler = (_event: unknown, data: { songId: string; progress: number }) => {
+      if (data.songId === songId) {
+        callback(data.progress)
+      }
+    }
+    ipcRenderer.send('download:subscribe-progress', songId)
+    ipcRenderer.on('download:progress', handler)
+    return () => ipcRenderer.removeListener('download:progress', handler)
+  },
 })
