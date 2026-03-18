@@ -1,4 +1,4 @@
-import { app } from 'electron'
+import { app, shell } from 'electron'
 import fs from 'node:fs'
 import path from 'node:path'
 import https from 'node:https'
@@ -11,6 +11,9 @@ export interface DownloadedSong {
   filePath: string
   fileSize: number
   downloadedAt: string
+  // 封面信息
+  coverUrl?: string
+  artists?: string
 }
 
 // 下载进度回调类型
@@ -70,7 +73,9 @@ export class DownloadManager {
   static async downloadAudio(
     songId: string,
     audioUrl: string,
-    title: string
+    title: string,
+    coverUrl?: string,
+    artists?: string
   ): Promise<{ success: boolean; error?: string; song?: DownloadedSong }> {
     this.init()
 
@@ -168,6 +173,8 @@ export class DownloadManager {
             filePath,
             fileSize: stats.size,
             downloadedAt: new Date().toISOString(),
+            coverUrl,
+            artists,
           }
 
           resolve(song)
@@ -245,5 +252,22 @@ export class DownloadManager {
     if (callbacks) {
       callbacks.forEach(cb => cb(progress))
     }
+  }
+
+  // 打开文件所在位置
+  static showInFolder(songId: string): { success: boolean; error?: string } {
+    this.init()
+
+    const song = this.downloads.get(songId)
+    if (!song) {
+      return { success: false, error: 'Song not found' }
+    }
+
+    if (!fs.existsSync(song.filePath)) {
+      return { success: false, error: 'File not found' }
+    }
+
+    shell.showItemInFolder(song.filePath)
+    return { success: true }
   }
 }
